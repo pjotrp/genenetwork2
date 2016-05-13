@@ -166,7 +166,7 @@ software.
 
 See the document [[GUIX-Reproducible-from-source.org]].
 
-* Trouble shooting
+* Troubleshooting
 
 ** ImportError: No module named jinja2
 
