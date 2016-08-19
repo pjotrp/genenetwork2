@@ -63,7 +63,7 @@ GENENETWORK_FILES = HOME+"/gn2_data"
 
 # Paths to JS libraries
 
-BIODALLIANCE_JS = os.environ['HOME']+"/genenetwork/biodalliance"
+BIODALLIANCE_JS_PATH = os.environ['HOME']+"/genenetwork/dalliance"
 
 # Paths to invoked binaries
 
