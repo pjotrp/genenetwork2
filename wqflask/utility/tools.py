@@ -183,6 +183,7 @@ LOG_BENCH          = get_setting_bool('LOG_BENCH')
 LOG_FORMAT         = "%(message)s"    # not yet in use
 USE_REDIS          = get_setting_bool('USE_REDIS')
 USE_GN_SERVER      = get_setting_bool('USE_GN_SERVER')
+WEBSERVER_URL      = get_setting('WEBSERVER_URL')
 
 PYLMM_COMMAND      = pylmm_command()
 GEMMA_COMMAND      = gemma_command()
