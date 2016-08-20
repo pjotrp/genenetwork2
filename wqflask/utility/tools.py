@@ -173,7 +173,7 @@ def show_settings():
 
 # Cached values
 WEBSERVER_MODE     = get_setting('WEBSERVER_MODE')
-GN_SERVER_URL      = get_setting('GN_SERVER_URL')
+API_SERVER_URL     = get_setting('API_SERVER_URL')
 SQL_URI            = get_setting('SQL_URI')
 LOG_LEVEL          = get_setting('LOG_LEVEL')
 LOG_LEVEL_DEBUG    = get_setting_int('LOG_LEVEL_DEBUG')

@@ -4,15 +4,15 @@ $(function() {
         populate_species();
         return apply_default();
     };
-  $.getJSON(gn_server_url+"/int/menu/main.json",
+  $.getJSON(api_server_url+"/int/menu/main.json",
   function(data) {
     gndata = data;
-    console.log("***** GOT DATA from GN_SERVER ****");
+    console.log("***** GOT DATA from API_SERVER ****");
     console.log(gndata);
     populate_species();
   }).error(function() {
-    console.log("ERROR: GN_SERVER not responding");
-    alert("ERROR: GN_SERVER internal REST API is not responding");
+    console.log("ERROR: API_SERVER not responding");
+    alert("ERROR: API_SERVER internal REST API is not responding");
   });
 
   var populate_species = function() {

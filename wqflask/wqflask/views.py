@@ -47,7 +47,7 @@ from wqflask.ctl import ctl_analysis
 
 from utility import webqtlUtil
 from utility import temp_data
-from utility.tools import SQL_URI,TEMPDIR,USE_REDIS,USE_GN_SERVER,GN_SERVER_URL
+from utility.tools import SQL_URI,TEMPDIR,USE_REDIS,USE_GN_SERVER,API_SERVER_URL,WEB_SERVER_URL
 
 from base import webqtlFormData
 from base.webqtlConfig import GENERATED_IMAGE_DIR, GENERATED_TEXT_DIR
@@ -88,7 +88,7 @@ def index_page():
     logger.info("Sending index_page")
     if USE_GN_SERVER:
         # The menu is generated using GN_SERVER
-        return render_template("index_page.html", gn_server_url = GN_SERVER_URL)
+        return render_template("index_page.html", api_server_url = API_SERVER_URL)
     else:
         # Old style static menu (OBSOLETE)
         return render_template("index_page_orig.html")
@@ -506,6 +506,8 @@ def marker_regression_page():
             gn1_template_vars = marker_regression_gn1.MarkerRegression(result).__dict__
             gn1_template_vars['json_filename'] = json_filename;
             gn1_template_vars['csv_filename'] = csv_filename;
+            gn1_template_vars['web_server_url'] = WEB_SERVER_URL;
+            gn1_template_vars['api_server_url'] = API_SERVER_URL;
 
             pickled_result = pickle.dumps(result, pickle.HIGHEST_PROTOCOL)
             logger.info("pickled result length:", len(pickled_result))
