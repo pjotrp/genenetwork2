@@ -48,8 +48,9 @@ to a table which is displayed using a JS [[https://datatables.net/][DataTable co
 * GnServer (REST)
 
 The [[https://github.com/genenetwork/gn_server][GnServer REST API]] is built on high performance [[http://elixir-lang.org/][Elixir]] with [[https://github.com/falood/maru][Maru]].
-Mainly the GnServer serves JSON requests, for example to fetch data
-from the database. To get the menu data in YAML you can do something like
+Mainly the GnServer serves JSON and R/qtl2 data format requests, for
+example to fetch data from the database. To get the menu data in YAML
+you can do something like
 
 : curl localhost:8880/int/menu/main.json|ruby extra/json2yaml.rb
 
@@ -72,7 +73,9 @@ see the installation [[./README.org][instructions]].
 
 Genotypes are stored in genotype files. These are part of the GNU Guix
 distribution, see the installation [[./README.org][instructions]]. Genotype files are
-currently in GN1 format, and will be aligned with the [[http://kbroman.org/qtl2/pages/sampledata.html][R/qtl2 formats]].
+currently in GN1 format for use in the main webserver, and will be
+aligned with the [[http://kbroman.org/qtl2/pages/sampledata.html][R/qtl2 formats]] - as is currently served by the REST
+API.
 
 GN1-style (still default GN2) for the stored file BXD.geno:
 
@@ -168,3 +171,5 @@ rs6365999,1,0.0,4.811062
 rs6376963,1,0.895,5.008089
 rs3677817,1,1.185,5.176058
 #+end_src
+
+For the latest formats served see the [[#gnserver-rest][GnServer (REST)]] API.

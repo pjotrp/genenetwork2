@@ -1,0 +1,118 @@
+#+TITLE: Submit data to GeneNetwork.org
+
+* Table of Contents                                                     :TOC:
+ - [[#introduction][Introduction]]
+ - [[#immutable-data-and-files][Immutable data and files]]
+ - [[#safe-storage][Safe storage]]
+ - [[#authorisation][Authorisation]]
+ - [[#roles-and-authentication][Roles and authentication]]
+ - [[#database-performance-and-caching][Database, performance and caching]]
+ - [[#rest-api][REST API]]
+   - [[#upload-genotypes][Upload Genotypes]]
+   - [[#upload-phenotypes][Upload phenotypes]]
+   - [[#upload-metadata][Upload metadata]]
+   - [[#security][Security]]
+
+* Introduction
+
+GeneNetwork's value is in having all data in one place - this allows
+researchers to correlate and compare data between different
+experiments using multiple convenient computational methods. Data is
+important and it should be *easy* to submit data to the system. The
+current data submission process is handled through the [[http://genenetwork.org/][GN1 web
+interface]] followed by data curation and acceptance and can be
+improved. In this document we discuss the new interface we are
+building for GN2.
+
+Critical features of a good upload interface are:
+
+1. Authentication and authorisation
+2. Handling of public/non-public data
+3. Validation, filtering and curation steps
+4. Adding metadata
+
+Initially we'll focus on a REST API so people can upload their data
+from R and Python. Later we can also build a browser-based interface.
+
+
+* Immutable data and files
+
+Data, once accepted in GN, should be immutable. This is because, once
+it exists, we should assume someone will have used it. To guarantee
+reproducibility of analysis, we will need to sustain the data in some
+way. Also, we have to make sure that data is not overwritten by
+'something else'.
+
+This does not mean we can not delete data. But at least, deleting data
+should happen in a controlled way with reports and (hopefully)
+backups. Ideally, data should be easy to recover. This way we can
+address the current issue of reproducible analysis.
+
+File based systems are superior to databases for this purpose. Files
+can have unique names and peacefully co-exist on an immutable file
+system. Also synchronizing files is almost trivial compared to
+databases containing terabytes of data. Of course there are tradeofs
+with performance that should be addressed.
+
+Genotype data is already handled through files.
+
+Phenoype data is stored in a SQL database (except for large files
+which are currently in plink binary format).
+
+* Safe storage
+
+While running files are immutable, users have to be able to upload
+data in their own storage areas with their own unique permissions.
+GN2 has to be able to find this data and include it in analysis.
+
+Having safe storage (basically directories with specific access
+permissions) will allow isolation of data, give privacy and allow
+keeping data in escrow (for further validation and processing).
+
+
+* Authorisation
+
+Once a user is authenticated the system will find data using the
+public data (partly in immutable files, partly in the database) and by
+using a file path to the user's safe storage.
+
+We are simplifying authorisation by not having private data in the
+database(!).
+
+* Roles and authentication
+
+The permission system is basically that of authors, groups, curators
+and administrators and can be provided by an LDAP-based authentication
+system.
+
+
+* Database, performance and caching
+
+At this point most phenotype data is stored in the database. The
+proposal is to change to a file based system where the data is stored
+in files. We will keep the database for aggressive caching purposes
+and search.
+
+
+* REST API
+
+** Upload Genotypes
+
+Genotypes are stored as files in GN2. This makes it straightforward to
+create an upload interface. Basically a REST PUT call can be made to
+upload a new file. This files are named based on their contents, so no
+file can be overwritten that has a different content. Once a genotype
+file exists users should be able to access them through the REST API.
+
+
+Initially these files will not be public - until a curator has seen
+them.
+
+** Upload phenotypes
+
+** Upload metadata
+
+
+** Security
+
+We only want users to be able to write data to predefined datasets.
