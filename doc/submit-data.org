@@ -8,10 +8,11 @@
  - [[#roles-and-authentication][Roles and authentication]]
  - [[#database-performance-and-caching][Database, performance and caching]]
  - [[#rest-api][REST API]]
-   - [[#upload-genotypes][Upload Genotypes]]
-   - [[#upload-phenotypes][Upload phenotypes]]
-   - [[#upload-metadata][Upload metadata]]
-   - [[#security][Security]]
+ - [[#data-curation][Data curation]]
+   - [[#user-level][User level]]
+   - [[#curator-level][Curator level]]
+   - [[#3rd-party-level][3rd party level]]
+ - [[#conclusion][Conclusion]]
 
 * Introduction
 
@@ -30,6 +31,7 @@ Critical features of a good upload interface are:
 2. Handling of public/non-public data
 3. Validation, filtering and curation steps
 4. Adding metadata
+5. Support reproducible analysis
 
 Initially we'll focus on a REST API so people can upload their data
 from R and Python. Later we can also build a browser-based interface.
@@ -37,11 +39,11 @@ from R and Python. Later we can also build a browser-based interface.
 
 * Immutable data and files
 
-Data, once accepted in GN, should be immutable. This is because, once
+Data, once accepted in GN2, should be immutable. This is because, once
 it exists, we should assume someone will have used it. To guarantee
 reproducibility of analysis, we will need to sustain the data in some
-way. Also, we have to make sure that data is not overwritten by
-'something else'.
+way and make it findable. Also, we have to make sure that data is not
+overwritten by 'something else'.
 
 This does not mean we can not delete data. But at least, deleting data
 should happen in a controlled way with reports and (hopefully)
@@ -49,19 +51,21 @@ backups. Ideally, data should be easy to recover. This way we can
 address the current issue of reproducible analysis.
 
 File based systems are superior to databases for this purpose. Files
-can have unique names and peacefully co-exist on an immutable file
-system. Also synchronizing files is almost trivial compared to
-databases containing terabytes of data. Of course there are tradeofs
-with performance that should be addressed.
+can have unique names and peacefully co-exist on a mixed
+mutable/immutable file system. Also synchronizing files is almost
+trivial compared to databases containing terabytes of data. Of course
+there are tradeofs with performance that should be addressed.
 
 Genotype data is already handled through files.
 
 Phenoype data is stored in a SQL database (except for large files
-which are currently in plink binary format).
+which are currently in plink binary format). We will move the
+phenotype data to files (initially using a hybrid database/file
+solution).
 
 * Safe storage
 
-While running files are immutable, users have to be able to upload
+While GN2 files are immutable, users have to be able to upload
 data in their own storage areas with their own unique permissions.
 GN2 has to be able to find this data and include it in analysis.
 
@@ -69,15 +73,15 @@ Having safe storage (basically directories with specific access
 permissions) will allow isolation of data, give privacy and allow
 keeping data in escrow (for further validation and processing).
 
-
 * Authorisation
 
-Once a user is authenticated the system will find data using the
-public data (partly in immutable files, partly in the database) and by
-using a file path to the user's safe storage.
+Once a user is authenticated (see below) the system will find data
+using the public data (partly in immutable files, partly in the
+database) and by using a file path to the user's safe storage.
 
 We are simplifying authorisation by not having private data in the
-database(!).
+public database. This means users can only upload private files to
+their designated areas on the server.
 
 * Roles and authentication
 
@@ -85,34 +89,62 @@ The permission system is basically that of authors, groups, curators
 and administrators and can be provided by an LDAP-based authentication
 system.
 
+Initially gn_server will simply serve users on based on an
+authentication token. Later we'll implement a more fine grained
+system.
 
 * Database, performance and caching
 
 At this point most phenotype data is stored in the database. The
-proposal is to change to a file based system where the data is stored
-in files. We will keep the database for aggressive caching purposes
-and search.
-
+proposal is to change that to a system where the data is stored in
+files. We will keep the database for aggressive caching purposes and
+search with the notable stipulation that only public data can be
+stored in the database.
 
 * REST API
 
-** Upload Genotypes
-
-Genotypes are stored as files in GN2. This makes it straightforward to
+When all data are stored as files in GN2 it becomes straightforward to
 create an upload interface. Basically a REST PUT call can be made to
-upload a new file. This files are named based on their contents, so no
-file can be overwritten that has a different content. Once a genotype
-file exists users should be able to access them through the REST API.
+upload a new file into a user area. Files are named based on their
+contents, so no file can be overwritten that has a different
+content. Once a genotype/phenotype/meta file exists users should be
+able to access them through the REST API.
 
+Initially these files are stored in isolated directories and will not
+be public - until a user requests making them public and a curator has
+seen them (see below).
 
-Initially these files will not be public - until a curator has seen
-them.
+* Data curation
 
-** Upload phenotypes
+Curation can happen at three levels. By the (uploading) user, by the
+GN curators and by the users of the GN system.
 
-** Upload metadata
+** User level
 
+We create R and Python tools to process the data before uploading into
+GN2. This ascertains that the user can check the data (draw plots) and
+the data is unified and validated to some extent.
 
-** Security
+** Curator level
 
-We only want users to be able to write data to predefined datasets.
+When a user requests making the data public, curators find the data in
+the user directories and can run some extra checks on them before and
+after adding them to the web services.
+
+** 3rd party level
+
+Other users of GN2 may find fault with entered data. We will create an
+online feedback system where users can leave notes related to
+individual datasets.
+
+* Conclusion
+
+To deal with data entry a number of critical strategic choices are
+proposed:
+
+1. Move to an immutable file-based data store where databases mostly
+   act as caches
+2. Allow users to upload data only in isolated directories
+3. User data is never public
+4. Curation happens at three levels and we provide tools for users
+   to validate and upload data from R and Python
