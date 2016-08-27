@@ -111,8 +111,8 @@ content. Once a genotype/phenotype/meta file exists users should be
 able to access them through the REST API.
 
 Initially these files are stored in isolated directories and will not
-be public - until a user requests making them public and a curator has
-seen them (see below).
+be public - until a user requests making them public and a curator
+(see below) has seen them and moves them to immutable storage.
 
 * Data curation
 
