@@ -139,12 +139,13 @@ individual datasets.
 
 * Conclusion
 
-To deal with data entry a number of critical strategic choices are
-proposed:
+To deal with data entry a number of critical choices are proposed:
 
-1. Move to an immutable file-based data store where databases mostly
-   act as caches
-2. Allow users to upload data only in isolated directories
-3. User data is never public
-4. Curation happens at three levels and we provide tools for users
+1. Move to an immutable file-based data store
+2. Eventually the SQL database mostly acts as a cache and can be
+   regenerated from files
+3. Users upload data only in isolated directories
+4. User data is never public
+5. Curators move user data to public immutable space on request
+6. Curation happens at three levels and we provide tools for users
    to validate and upload data from R and Python
