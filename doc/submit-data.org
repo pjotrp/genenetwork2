@@ -19,12 +19,12 @@
 
 GeneNetwork's value is in having all data in one place: this allows
 researchers to correlate and compare data between different
-experiments using multiple convenient computational methods. Data is
-important and it should be *easy* to submit data to the system. The
+experiments using multiple computational methods. Having data is
+crucial and it should be *easy* to submit data to the system. The
 current data submission process is handled through the [[http://genenetwork.org/][GN1 web
-interface]] followed by data curation and acceptance and can be
-improved. In this document we discuss the new interface we are
-building for GN2.
+interface]] followed by SQL manipulation, data curation and acceptance.
+It can be improved. In this document we discuss the new strategy and
+interface we are proposing for GN2.
 
 Critical features of a good upload/update interface are:
 
@@ -34,21 +34,24 @@ Critical features of a good upload/update interface are:
 4. Adding metadata
 5. Support reproducible analysis
 
-Initially we'll focus on a REST API so people can upload their data
-from R and Python. Later we can also build a browser-based interface.
+The implementation will be in stages. First we decide on where to
+store data and how to use databases. Initially we'll focus on a REST
+API so people can upload their data from R and Python. Later we can
+also build a browser-based interface.
 
 * Immutable data and files
 
-Data in GN2 should be immutable. This is because, once
-it exists, we should assume someone will have used it. To guarantee
-reproducibility of analysis, we will need to sustain the data in some
-way and make it findable. Also, we have to make sure that data is not
-overwritten by 'something else'.
+Data in GN2 should be immutable. This is because, once a dataset
+exists and gets exposed to users, we should assume someone will have
+used it. To guarantee reproducibility of analysis, we will need to
+sustain the data in some way and make it findable. Also, we have to
+make sure that data is not overwritten accidentily by someone or
+'something else'.
 
 This does not mean we can not delete data. But at least, deleting data
-should happen in a controlled way with reports and (hopefully)
-backups. Ideally, data should be easy to recover. This way we can
-address the current issue of reproducible analysis.
+should happen in a controlled way with reports and backups. Ideally,
+data should be easy to recover. This way we can address the current
+issue of reproducible analysis.
 
 File based systems are superior to databases for this purpose. Files
 can have unique names and peacefully co-exist on a mixed
@@ -110,14 +113,19 @@ all SQL commands with REST API calls thereby passing the logic for
 authentication, authorisation, data fetching and performance to
 gn_server - which is written for parallel performance in Elixir.
 
+One additional benefit of making the files primary storage, generate
+the SQL database from primary data, and handling all access through
+gn_server REST API, is that it will be much easier to change the
+database layout.
+
 * Metadata
 
 Metadata describes data. The current metadata in GN is pretty simple
-and does not allow for bringing in complex relationships for datasets
-and elements thereof. For GN2 we envisage using graph networks which
-can describe, for example, known pathways and gene products. A graph
-database would be a natural fit for such data and can also be used in
-other ways. Once data lives in a graph database it can be used in many
+(mostly a flat table) and does not allow for bringing in complex
+relationships for datasets and elements thereof. For GN2 we envisage
+using graph networks which can describe, for example, known pathways
+and gene products. A graph database would be a natural fit for such
+data. Once data lives in a graph database it can be used in many
 ways. Metadata, in priciple, should be public and queriable through a
 SPARQL endpoint.
 
@@ -135,7 +143,8 @@ able to access them through the REST API.
 
 Initially these files are stored in isolated directories and will not
 be public - until a user requests making them public and a curator
-(see below) has seen them and moves them to immutable storage.
+(see below) has seen them and moves them to immutable storage. Note
+that public data is considered immutable.
 
 * Data curation
 
