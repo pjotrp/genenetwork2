@@ -3,10 +3,11 @@
 * Table of Contents                                                     :TOC:
  - [[#introduction][Introduction]]
  - [[#immutable-data-and-files][Immutable data and files]]
- - [[#safe-storage][Safe storage]]
+ - [[#safe-storage-and-privacy][Safe storage and privacy]]
  - [[#authorisation][Authorisation]]
  - [[#roles-and-authentication][Roles and authentication]]
  - [[#database-performance-and-caching][Database, performance and caching]]
+ - [[#metadata][Metadata]]
  - [[#rest-api][REST API]]
  - [[#data-curation][Data curation]]
    - [[#user-level][User level]]
@@ -16,7 +17,7 @@
 
 * Introduction
 
-GeneNetwork's value is in having all data in one place - this allows
+GeneNetwork's value is in having all data in one place: this allows
 researchers to correlate and compare data between different
 experiments using multiple convenient computational methods. Data is
 important and it should be *easy* to submit data to the system. The
@@ -25,7 +26,7 @@ interface]] followed by data curation and acceptance and can be
 improved. In this document we discuss the new interface we are
 building for GN2.
 
-Critical features of a good upload interface are:
+Critical features of a good upload/update interface are:
 
 1. Authentication and authorisation
 2. Handling of public/non-public data
@@ -36,10 +37,9 @@ Critical features of a good upload interface are:
 Initially we'll focus on a REST API so people can upload their data
 from R and Python. Later we can also build a browser-based interface.
 
-
 * Immutable data and files
 
-Data, once accepted in GN2, should be immutable. This is because, once
+Data in GN2 should be immutable. This is because, once
 it exists, we should assume someone will have used it. To guarantee
 reproducibility of analysis, we will need to sustain the data in some
 way and make it findable. Also, we have to make sure that data is not
@@ -58,20 +58,20 @@ there are tradeofs with performance that should be addressed.
 
 Genotype data is already handled through files.
 
-Phenoype data is stored in a SQL database (except for large files
-which are currently in plink binary format). We will move the
+Phenoype data is currently stored in a SQL database (except for large files
+which are currently in plink binary format). We will move all
 phenotype data to files (initially using a hybrid database/file
-solution).
+solution) and use the database for fast caching and queries.
 
-* Safe storage
+* Safe storage and privacy
 
-While GN2 files are immutable, users have to be able to upload
+Because GN2 files are immutable, users have to upload
 data in their own storage areas with their own unique permissions.
 GN2 has to be able to find this data and include it in analysis.
 
-Having safe storage (basically directories with specific access
-permissions) will allow isolation of data, give privacy and allow
-keeping data in escrow (for further validation and processing).
+Safe storage (basically implemented as directories with specific
+access permissions) will allow isolation of data, give privacy and
+allow keeping data in escrow (for further validation and processing).
 
 * Authorisation
 
@@ -79,9 +79,10 @@ Once a user is authenticated (see below) the system will find data
 using the public data (partly in immutable files, partly in the
 database) and by using a file path to the user's safe storage.
 
-We are simplifying authorisation by not having private data in the
-public database. This means users can only upload private files to
-their designated areas on the server.
+We are greatly simplifying authorisation and, at the same time,
+deployment by not having private data in the public database. This
+means users can only upload private files to their designated areas on
+the server.
 
 * Roles and authentication
 
@@ -97,15 +98,37 @@ system.
 
 At this point most phenotype data is stored in the database. The
 proposal is to change that to a system where the data is stored in
-files. We will keep the database for aggressive caching purposes and
-search with the notable stipulation that only public data can be
-stored in the database.
+files (and metadata in a graph database). We will keep the database
+for aggressive caching purposes and search with the notable
+stipulation that only public data can be stored in the main database.
+
+The general strategy is that the running SQL database is (re)generated
+from these input files, rather than it being the primary storage. One
+added advantage is that the SQL model can be minimalistic and primed
+for performance only. The main (Python-based) webserver will replace
+all SQL commands with REST API calls thereby passing the logic for
+authentication, authorisation, data fetching and performance to
+gn_server - which is written for parallel performance in Elixir.
+
+* Metadata
+
+Metadata describes data. The current metadata in GN is pretty simple
+and does not allow for bringing in complex relationships for datasets
+and elements thereof. For GN2 we envisage using graph networks which
+can describe, for example, known pathways and gene products. A graph
+database would be a natural fit for such data and can also be used in
+other ways. Once data lives in a graph database it can be used in many
+ways. Metadata, in priciple, should be public and queriable through a
+SPARQL endpoint.
+
+Metadata should therefore be uploaded into a graph database. This can
+be achieved by using RDF/JSON.
 
 * REST API
 
 When all data are stored as files in GN2 it becomes straightforward to
 create an upload interface. Basically a REST PUT call can be made to
-upload a new file into a user area. Files are named based on their
+upload a new file into a user directory. Files are named based on their
 contents, so no file can be overwritten that has a different
 content. Once a genotype/phenotype/meta file exists users should be
 able to access them through the REST API.
@@ -139,7 +162,8 @@ individual datasets.
 
 * Conclusion
 
-To deal with data entry a number of critical choices are proposed:
+To deal with data entry a number of critical choices are proposed
+here:
 
 1. Move to an immutable file-based data store
 2. Eventually the SQL database mostly acts as a cache and can be
@@ -149,3 +173,4 @@ To deal with data entry a number of critical choices are proposed:
 5. Curators move user data to public immutable space on request
 6. Curation happens at three levels and we provide tools for users
    to validate and upload data from R and Python
+7. Metadata will be added into a graph database using RDF/JSON
