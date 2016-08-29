@@ -155,7 +155,9 @@ GN curators and by the users of the GN system.
 
 We create R and Python tools to process the data before uploading into
 GN2. This ascertains that the user can check the data (draw plots) and
-the data is unified and validated to some extent.
+the data is unified and validated to some extent. It is important to
+catch issues before uploading data - as datasets grow larger this
+point will be appreciated.
 
 ** Curator level
 
