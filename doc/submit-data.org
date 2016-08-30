@@ -68,9 +68,10 @@ solution) and use the database for fast caching and queries.
 
 * Safe storage and privacy
 
-Because GN2 files are immutable, users have to upload
-data in their own storage areas with their own unique permissions.
-GN2 has to be able to find this data and include it in analysis.
+Because GN2 files are immutable and the main storage is immutable,
+users have to upload data in their own storage areas with their own
+unique permissions.  GN2 has to be able to find this data and include
+it in analysis.
 
 Safe storage (basically implemented as directories with specific
 access permissions) will allow isolation of data, give privacy and
@@ -85,7 +86,7 @@ database) and by using a file path to the user's safe storage.
 We are greatly simplifying authorisation and, at the same time,
 deployment by not having private data in the public database. This
 means users can only upload private files to their designated areas on
-the server.
+the server. These storage areas can be HIPAA compliant.
 
 * Roles and authentication
 
@@ -102,7 +103,7 @@ system.
 At this point most phenotype data is stored in the database. The
 proposal is to change that to a system where the data is stored in
 files (and metadata in a graph database). We will keep the database
-for aggressive caching purposes and search with the notable
+for aggressive caching purposes and search with the
 stipulation that only public data can be stored in the main database.
 
 The general strategy is that the running SQL database is (re)generated
@@ -111,7 +112,10 @@ added advantage is that the SQL model can be minimalistic and primed
 for performance only. The main (Python-based) webserver will replace
 all SQL commands with REST API calls thereby passing the logic for
 authentication, authorisation, data fetching and performance to
-gn_server - which is written for parallel performance in Elixir.
+gn_server - which is written for parallel performance in Elixir. This
+approach has the additional benefit that functionality can be moved
+from the Python backend to the Javascript frontend (Javascript can not
+use SQL, but it can use REST).
 
 One additional benefit of making the files primary storage, generate
 the SQL database from primary data, and handling all access through
@@ -125,9 +129,9 @@ Metadata describes data. The current metadata in GN is pretty simple
 relationships for datasets and elements thereof. For GN2 we envisage
 using graph networks which can describe, for example, known pathways
 and gene products. A graph database would be a natural fit for such
-data. Once data lives in a graph database it can be used in many
-ways. Metadata, in priciple, should be public and queriable through a
-SPARQL endpoint.
+data and metadata. Once data lives in a graph database it can be used
+in many ways. This data should, in priciple, be public and queryable
+through a SPARQL endpoint.
 
 Metadata should therefore be uploaded into a graph database. This can
 be achieved by using RDF/JSON.
@@ -141,10 +145,10 @@ contents, so no file can be overwritten that has a different
 content. Once a genotype/phenotype/meta file exists users should be
 able to access them through the REST API.
 
-Initially these files are stored in isolated directories and will not
-be public - until a user requests making them public and a curator
-(see below) has seen them and moves them to immutable storage. Note
-that public data is considered immutable.
+Initially these files are stored in isolated directories and will only
+be visible to the user until a user requests making them public and a
+curator (see below) has seen them and moves them to immutable
+storage. Note that public data is always considered immutable.
 
 * Data curation
 
@@ -153,11 +157,11 @@ GN curators and by the users of the GN system.
 
 ** User level
 
-We create R and Python tools to process the data before uploading into
+We will create R tools to process the data before uploading into
 GN2. This ascertains that the user can check the data (draw plots) and
 the data is unified and validated to some extent. It is important to
 catch issues before uploading data - as datasets grow larger this
-point will be appreciated.
+point will be (increasingly) appreciated.
 
 ** Curator level
 
@@ -180,7 +184,7 @@ here:
 2. Eventually the SQL database mostly acts as a cache and can be
    regenerated from files
 3. Users upload data only in isolated directories
-4. User data is never public
+4. User data requires authentication is never public
 5. Curators move user data to public immutable space on request
 6. Curation happens at three levels and we provide tools for users
    to validate and upload data from R and Python
