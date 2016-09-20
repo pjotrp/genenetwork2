@@ -12,6 +12,7 @@ import datetime
 import os
 import collections
 import uuid
+import time
 
 import rpy2.robjects as ro
 import numpy as np
@@ -158,6 +159,7 @@ class MarkerRegression(object):
         elif self.mapping_method == "rqtl_geno":
             self.score_type = "LOD"
             self.mapping_scale = "morgan"
+            self.dataset.group.genofile = start_vars['genofile']
             self.control_marker = start_vars['control_marker']
             self.do_control = start_vars['do_control']
             self.method = start_vars['mapmethod_rqtl_geno']
@@ -192,11 +194,15 @@ class MarkerRegression(object):
 
             self.control_marker = start_vars['control_marker']
             self.do_control = start_vars['do_control']
+            self.dataset.group.genofile = start_vars['genofile']
             results = self.gen_reaper_results()
+
         elif self.mapping_method == "plink":
             results = self.run_plink()
         elif self.mapping_method == "pylmm":
             print("RUNNING PYLMM")
+            self.dataset.group.genofile = start_vars['genofile']
+            self.dataset.group.get_markers()
             if self.num_perm > 0:
                 self.run_permutations(str(temp_uuid))
             results = self.gen_data(str(temp_uuid))
@@ -401,7 +407,8 @@ class MarkerRegression(object):
         GENOtoCSVR      = ro.r["GENOtoCSVR"]            # Map the local GENOtoCSVR function
 
         crossname = self.dataset.group.name
-        genofilelocation  = locate(crossname + ".geno", "genotype")
+        genofile = self.dataset.group.genofile
+        genofilelocation  = locate(genofile, "genotype")
         crossfilelocation = TMPDIR + crossname + ".cross"
 
         #print("Conversion of geno to cross at location:", genofilelocation, " to ", crossfilelocation)
@@ -673,7 +680,7 @@ class MarkerRegression(object):
 
         self.json_data['suggestive'] = self.suggestive
         self.json_data['significant'] = self.significant
-
+        
         if self.control_marker != "" and self.do_control == "true":
             reaper_results = genotype.regression(strains = trimmed_samples,
                                                  trait = trimmed_values,
@@ -709,6 +716,7 @@ class MarkerRegression(object):
                                                             trait = trimmed_values,
                                                             nboot = self.num_bootstrap)
 
+
         self.json_data['chr'] = []
         self.json_data['pos'] = []
         self.json_data['lod.hk'] = []
@@ -722,8 +730,10 @@ class MarkerRegression(object):
             reaper_locus = qtl.locus
             #ZS: Convert chr to int
             converted_chr = reaper_locus.chr
+
             if reaper_locus.chr != "X" and reaper_locus.chr != "X/Y":
                 converted_chr = int(reaper_locus.chr)
+
             self.json_data['chr'].append(converted_chr)
             self.json_data['pos'].append(reaper_locus.Mb)
             self.json_data['lod.hk'].append(qtl.lrs)
@@ -734,9 +744,7 @@ class MarkerRegression(object):
             qtl = {"lrs_value": qtl.lrs, "chr":converted_chr, "Mb":reaper_locus.Mb,
                    "cM":reaper_locus.cM, "name":reaper_locus.name, "additive":qtl.additive, "dominance":qtl.dominance}
             qtl_results.append(qtl)
-
         return qtl_results
-
 
     def parse_plink_output(self, output_filename):
         plink_results={}
@@ -1059,7 +1067,7 @@ class MarkerRegression(object):
                 new_genotypes.append(genotype)
             trimmed_genotype_data.append(new_genotypes)
         return trimmed_genotype_data
-
+    
 def create_snp_iterator_file(group):
     """
     This function is only called by main below

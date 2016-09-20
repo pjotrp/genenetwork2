@@ -40,8 +40,8 @@ from __future__ import print_function, division
 
 import sys
 
-# NEW: Note we prepend the current path - otherwise a guix instance of GN2 is used instead
-sys.path.insert(0,'./wqflask')
+# NEW: Note we prepend the current path - otherwise a guix instance of GN2 may be used instead
+sys.path.insert(0,'./')
 # NEW: import app to avoid a circular dependency on utility.tools
 from wqflask import app
 
@@ -49,7 +49,7 @@ from utility.tools import locate, locate_ignore_error, TEMPDIR, SQL_URI
 
 import MySQLdb
 
-# import simplejson as json
+import simplejson as json
 import urlparse
 
 
@@ -289,7 +289,7 @@ def main():
 
     #print("data:", data)
 
-    output_file = """./wqflask/wqflask/static/new/javascript/dataset_menu_structure.json"""
+    output_file = """./wqflask/static/new/javascript/dataset_menu_structure.json"""
 
     with open(output_file, 'w') as fh:
         json.dump(data, fh, indent="   ", sort_keys=True)

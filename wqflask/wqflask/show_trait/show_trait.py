@@ -24,6 +24,7 @@ from basicStatistics import BasicStatisticsFunctions
 from pprint import pformat as pf
 
 from utility.tools import flat_files
+from utility.tools import get_setting
 MAPPING_PATH = flat_files("mapping")
 
 from utility.logger import getLogger
@@ -121,6 +122,7 @@ class ShowTrait(object):
         hddn['method'] = "pylmm"
         hddn['mapping_display_all'] = True
         hddn['suggestive'] = 0
+        hddn['genofile'] = ""
         hddn['num_perm'] = 0
         hddn['manhattan_plot'] = ""
         if hasattr(self.this_trait, 'locus_chr') and self.this_trait.locus_chr != "" and self.dataset.type != "Geno" and self.dataset.type != "Publish":
@@ -175,6 +177,7 @@ class ShowTrait(object):
             else:
                 return False
 
+        self.genofiles = get_genofiles(self.this_trait)
         self.use_plink_gemma = check_plink_gemma()
         self.use_pylmm_rqtl = check_pylmm_rqtl()
 
@@ -1260,6 +1263,18 @@ def get_nearest_marker(this_trait, this_db):
     else:
         return result[0][0]
         #return result[0][0], result[1][0]
+
+def get_genofiles(this_trait):
+    servername = get_setting('SERVERNAME')
+    query = """
+        SELECT GenoFile.`location`,GenoFile.`title`
+        FROM GenoFile
+        WHERE GenoFile.`server`='{}'
+        AND GenoFile.`InbredSetID`='{}'
+        ORDER BY GenoFile.`sort`
+        """.format(servername, this_trait.dataset.group.id)
+    re = g.db.execute(query).fetchall()
+    return re
 
 def get_trait_table_width(sample_groups):
     table_width = 35

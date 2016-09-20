@@ -12,7 +12,7 @@ window.onload=function() {
             selector: 'node',
             style: {
               'background-color': '#666',
-              'label': 'data(id)',
+              'label': 'data(symbol)',
               'font-size': 10
             }
           },
@@ -154,6 +154,15 @@ window.onload=function() {
         
     });
     
+    $('#reset_graph').click(function() {
+        eles.restore() 
+        $('#slide').val(0)
+        cy.layout({ name: $('select[name=layout_select]').val(),
+                    fit: true, // whether to fit the viewport to the graph
+                    padding: 25 // the padding on fit              
+                  });
+    });
+    
     $('select[name=focus_select]').change(function() {
         focus_trait = $(this).val()
 
@@ -178,10 +187,8 @@ window.onload=function() {
     $("a#image_link").click(function(e) {
       var pngData = cy.png();
 
-      image_link.href = 'data:image/png;base64,' + pngData;
-      image_link.download = 'network_graph.png';
-      
-      console.log("TESTING:", image_link)
+      $(this).attr('href', pngData);
+      $(this).attr('download', 'network_graph.png');
       
     });
 
