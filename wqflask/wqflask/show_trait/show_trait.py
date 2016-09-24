@@ -1265,8 +1265,11 @@ def get_nearest_marker(this_trait, this_db):
         #return result[0][0], result[1][0]
 
 def get_genofiles(this_trait):
-    genofiles = get_setting('GENOFILES')
+    genofiles = os.listdir(webqtlConfig.GENODIR)
     if genofiles and this_trait.dataset.group.id in genofiles:
+        # not sure this indexing works! FIXME
+        # also function should go into wqflask/utility/files.py
+        raise Exception("genofile error")
         return genofiles[this_trait.dataset.group.id]
     else:
         return None

@@ -34,7 +34,8 @@ describe MainWebFunctionality do
       # [name: corr_dataset value: HC_M2_0606_P]
       form2.fields.select { |fld| fld.name == 'corr_dataset' }.first.value.must_equal 'HC_M2_0606_P'
       if $options[:database] == :small
-        form2.fields[30].name.must_equal  "value:DBA/2J"
+        form2.fields[30].name.must_equal  "value:C57BL/6J"
+        # form2.fields[30].name.must_equal  "value:DBA/2J"
       else
         form2.fields[30].name.must_equal  "variance:C57BL/6J"
       end

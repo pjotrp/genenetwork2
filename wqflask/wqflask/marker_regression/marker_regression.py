@@ -681,7 +681,7 @@ class MarkerRegression(object):
 
         self.json_data['suggestive'] = self.suggestive
         self.json_data['significant'] = self.significant
-        
+
         if self.control_marker != "" and self.do_control == "true":
             reaper_results = genotype.regression(strains = trimmed_samples,
                                                  trait = trimmed_values,
@@ -1068,14 +1068,18 @@ class MarkerRegression(object):
                 new_genotypes.append(genotype)
             trimmed_genotype_data.append(new_genotypes)
         return trimmed_genotype_data
-    
+
 def get_genofile(inbredsetid, index):
     if index.isdigit():
         index = int(index)
-        return get_setting('GENOFILES')[inbredsetid][index][1]
+        # how does this work? Use GENODIR instead to find file. This
+        # also function should go into wqflask/utility/files.py
+        # return get_setting('GENOFILES')[inbredsetid][index][1]
+        # FIXME
+        raise Exception("genofile error")
     else:
         return None
-    
+
 def create_snp_iterator_file(group):
     """
     This function is only called by main below
