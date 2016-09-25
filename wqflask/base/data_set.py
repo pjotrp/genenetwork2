@@ -165,6 +165,7 @@ def mescape(*items):
 class Markers(object):
     """Todo: Build in cacheing so it saves us reading the same file more than once"""
     def __init__(self, genofile):
+        logger.debug("Loading "+genofile)
         json_filename = ".".join(genofile.split(".")[:-1]) + ".json"
         json_data_fh = open(locate(json_filename,'genotype/json'))
         try:
@@ -280,6 +281,7 @@ class DatasetGroup(object):
         self.allsamples = None
         self._datasets = None
         self.genofile = self.name + ".geno"
+        logger.debug("Genofile=",self.genofile)
 
     def get_specified_markers(self, markers = []):
         self.markers = HumanMarkers(self.name, markers)
@@ -410,10 +412,9 @@ class DatasetGroup(object):
         genotype_1 = reaper.Dataset()
 
         # reaper barfs on unicode filenames, so here we ensure it's a string
-        if self.genofile:
-            full_filename = str(locate(self.genofile, 'genotype'))
-        else:
-            full_filename = str(locate(self.name+'.geno', 'genotype'))
+        if not self.genofile:
+            self.genofile = self.name + '.geno'
+        full_filename = str(file.find_genofile(self.genofile))
         print("before read full_filename: %s" % full_filename)
         genotype_1.read(full_filename)
         print("after read full_filename: %s" % full_filename)

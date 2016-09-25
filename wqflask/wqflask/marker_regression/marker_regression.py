@@ -42,6 +42,10 @@ from utility.tools import locate, locate_ignore_error, PYLMM_COMMAND, GEMMA_COMM
 from utility.tools import get_setting
 from utility.external import shell
 from base.webqtlConfig import TMPDIR, GENERATED_TEXT_DIR
+from utility.files import find_genofile
+
+from utility.logger import getLogger
+logger = getLogger(__name__ )
 
 class MarkerRegression(object):
 
@@ -162,7 +166,8 @@ class MarkerRegression(object):
         elif self.mapping_method == "rqtl_geno":
             self.score_type = "LOD"
             self.mapping_scale = "morgan"
-            self.dataset.group.genofile = get_genofile(self.this_trait.dataset.group.id, start_vars['genofile'])
+            print(start_vars['genofile'])
+            self.dataset.group.genofile = self.get_genofile(self.this_trait.dataset.group.id, start_vars['genofile'])
             self.control_marker = start_vars['control_marker']
             self.do_control = start_vars['do_control']
             self.method = start_vars['mapmethod_rqtl_geno']
@@ -197,14 +202,14 @@ class MarkerRegression(object):
 
             self.control_marker = start_vars['control_marker']
             self.do_control = start_vars['do_control']
-            self.dataset.group.genofile = get_genofile(self.this_trait.dataset.group.id, start_vars['genofile'])
+            self.dataset.group.genofile = self.get_genofile(self.this_trait.dataset.group.id, start_vars['genofile'])
             results = self.gen_reaper_results()
 
         elif self.mapping_method == "plink":
             results = self.run_plink()
         elif self.mapping_method == "pylmm":
             print("RUNNING PYLMM")
-            self.dataset.group.genofile = get_genofile(self.this_trait.dataset.group.id, start_vars['genofile'])
+            self.dataset.group.genofile = self.get_genofile(self.this_trait.dataset.group.id, start_vars['genofile'])
             self.dataset.group.get_markers()
             if self.num_perm > 0:
                 self.run_permutations(str(temp_uuid))
@@ -1071,16 +1076,18 @@ class MarkerRegression(object):
             trimmed_genotype_data.append(new_genotypes)
         return trimmed_genotype_data
 
-def get_genofile(inbredsetid, index):
-    if index.isdigit():
-        index = int(index)
-        # how does this work? Use GENODIR instead to find file. This
-        # also function should go into wqflask/utility/files.py
-        # return get_setting('GENOFILES')[inbredsetid][index][1]
-        # FIXME
-        raise Exception("genofile error")
-    else:
-        return None
+    def get_genofile(self, inbredsetid, index, start_vars):
+        if index.isdigit():
+            index = int(index)
+            # how does this work? Use GENODIR instead to find file. This
+            # also function should go into wqflask/utility/files.py
+            # return get_setting('GENOFILES')[inbredsetid][index][1]
+            # FIXME
+            raise Exception("genofile error")
+        else:
+            print(inbredsetid, index)
+            # raise Exception("genofile, looking for")
+        return find_genofile(start_vars['genofile'])
 
 def create_snp_iterator_file(group):
     """
