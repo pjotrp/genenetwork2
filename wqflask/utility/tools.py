@@ -93,6 +93,10 @@ def gemma_command(guess=None):
 def plink_command(guess=None):
     return valid_bin(get_setting("PLINK_COMMAND",guess))
 
+def flat_file_exists(subdir):
+    base = get_setting("GENENETWORK_FILES")
+    return valid_path(base+"/"+subdir)
+
 def flat_files(subdir=None):
     base = get_setting("GENENETWORK_FILES")
     if subdir:
@@ -103,6 +107,7 @@ def assert_dir(dir):
     if not valid_path(dir):
         raise Exception("ERROR: can not find directory "+dir)
     return dir
+
 
 def mk_dir(dir):
     if not valid_path(dir):
@@ -147,7 +152,10 @@ def locate_ignore_error(name, subdir=None):
     return None
 
 def tempdir():
-    return valid_path(get_setting("TEMPDIR","/tmp"))
+    """
+    Get UNIX TMPDIR by default
+    """
+    return valid_path(get_setting("TMPDIR","/tmp"))
 
 BLUE  = '\033[94m'
 GREEN = '\033[92m'
@@ -186,8 +194,9 @@ USE_REDIS          = get_setting_bool('USE_REDIS')
 USE_GN_SERVER      = get_setting_bool('USE_GN_SERVER')
 WEBSERVER_URL      = get_setting('WEBSERVER_URL')
 
+GENENETWORK_FILES  = get_setting('GENENETWORK_FILES')
+
 PYLMM_COMMAND      = pylmm_command()
 GEMMA_COMMAND      = gemma_command()
 PLINK_COMMAND      = plink_command()
-FLAT_FILES         = flat_files()
 TEMPDIR            = tempdir()
