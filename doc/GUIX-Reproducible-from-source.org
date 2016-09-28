@@ -24,8 +24,8 @@ Guix repository - use gn-stable for that:
 #+begin_src sh   :lang bash
 mkdir genenetwork
 cd genenetwork
-git checkout https://github.com/genenetwork/guix.git gn-stable-guix
-git checkout https://github.com/genenetwork/guix-bioinformatics.git
+git clone https://github.com/genenetwork/guix.git -b gn-stable gn-stable-guix
+git clone https://github.com/genenetwork/guix-bioinformatics.git -b gn-stable
 #+end_src
 
 Next build guix (and run) following the instructions in [[https://github.com/pjotrp/guix-notes/blob/master/INSTALL.org#building-gnu-guix-from-source-using-guix][guix-notes]].
