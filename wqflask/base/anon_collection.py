@@ -1,6 +1,6 @@
 class AnonCollection(TraitCollection):
     
-    def __init__(self, anon_id)
+    def __init__(self, anon_id):
         self.anon_id = anon_id
         self.collection_members = Redis.smembers(self.anon_id)
         print("self.collection_members is:", self.collection_members)

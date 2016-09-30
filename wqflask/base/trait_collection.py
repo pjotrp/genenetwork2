@@ -32,7 +32,7 @@ class TraitCollection(object):
         # we can use it to check the results
         return str(len(members_now))
 
-    def __init__(self, anon_id)
+    def __init__(self, anon_id):
         self.anon_key = anon_key
         self.collection_members = Redis.smembers(self.anon_id)
         print("self.collection_members is:", self.collection_members)
