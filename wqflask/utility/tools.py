@@ -233,4 +233,5 @@ if os.environ.get('WQFLASK_OVERRIDES'):
                 OVERRIDES[k] = cmd
             logger.debug(OVERRIDES)
 
-assert_dir(get_setting("TWITTER_POST_FETCHER_JS_PATH"))
+assert_dir(get_setting("JS_BIODALLIANCE"))
+assert_dir(get_setting("JS_TWITTER_POST_FETCHER"))
