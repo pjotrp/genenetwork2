@@ -421,6 +421,20 @@ def export_perm_data():
                     mimetype='text/csv',
                     headers={"Content-Disposition":"attachment;filename=perm_data.csv"})
 
+@app.route("/show_temp_trait", methods=('POST',))
+def show_temp_trait_page():
+    template_vars = show_trait.ShowTrait(request.form)
+    #logger.info("js_data before dump:", template_vars.js_data)
+    template_vars.js_data = json.dumps(template_vars.js_data,
+                                       default=json_default_handler,
+                                       indent="   ")
+    # Sorting the keys messes up the ordered dictionary, so don't do that
+                                       #sort_keys=True)
+
+    #logger.info("js_data after dump:", template_vars.js_data)
+    #logger.info("show_trait template_vars:", pf(template_vars.__dict__))
+    return render_template("show_trait.html", **template_vars.__dict__)
+
 @app.route("/show_trait")
 def show_trait_page():
     template_vars = show_trait.ShowTrait(request.args)
@@ -607,13 +621,10 @@ def marker_regression_page():
         with Bench("Total time in MarkerRegression"):
             template_vars = marker_regression.MarkerRegression(start_vars, temp_uuid)
 
-
-        qtl_results = template_vars.js_data['qtl_results']
-
-        template_vars.js_data = json.dumps(template_vars.js_data,
-                                           default=json_default_handler,
-                                           indent="   ")
-
+        if template_vars.mapping_method != "gemma" and template_vars.mapping_method != "plink":
+            template_vars.js_data = json.dumps(template_vars.js_data,
+                                               default=json_default_handler,
+                                               indent="   ")
 
         json_filename = webqtlUtil.genRandStr("") + ".json"
         with open(GENERATED_TEXT_DIR + "/" + json_filename, "wb") as json_file:
@@ -647,16 +658,15 @@ def marker_regression_page():
             #    logger.info("  ---**--- {}: {}".format(type(template_vars.__dict__[item]), item))
 
             gn1_template_vars = marker_regression_gn1.MarkerRegression(result).__dict__
-            gn1_template_vars['json_filename'] = json_filename;
-            gn1_template_vars['csv_filename'] = csv_filename;
-            gn1_template_vars['gn_server_url'] = GN_SERVER_URL;
-
-            pickled_result = pickle.dumps(result, pickle.HIGHEST_PROTOCOL)
-            logger.info("pickled result length:", len(pickled_result))
-            Redis.set(key, pickled_result)
-            Redis.expire(key, 1*60)
+            #pickled_result = pickle.dumps(result, pickle.HIGHEST_PROTOCOL)
+            #logger.info("pickled result length:", len(pickled_result))
+            #Redis.set(key, pickled_result)
+            #Redis.expire(key, 1*60)
 
             with Bench("Rendering template"):
+                if (gn1_template_vars['mapping_method'] == "gemma") or (gn1_template_vars['mapping_method'] == "plink"):
+                    gn1_template_vars.pop('qtlresults', None)
+                print("TEMPLATE KEYS:", list(gn1_template_vars.keys()))
                 rendered_template = render_template("marker_regression_gn1.html", **gn1_template_vars)
 
     return rendered_template
