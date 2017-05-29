@@ -213,23 +213,24 @@ SQL_URI            = get_setting('SQL_URI')
 LOG_LEVEL          = get_setting('LOG_LEVEL')
 LOG_LEVEL_DEBUG    = get_setting_int('LOG_LEVEL_DEBUG')
 LOG_SQL            = get_setting_bool('LOG_SQL')
-LOG_SQLALCHEMY     = get_setting_bool('LOG_SQLALCHEMY')
+LOG_SQL_ALCHEMY    = get_setting_bool('LOG_SQL_ALCHEMY')
 LOG_BENCH          = get_setting_bool('LOG_BENCH')
 LOG_FORMAT         = "%(message)s"    # not yet in use
 USE_REDIS          = get_setting_bool('USE_REDIS')
 USE_GN_SERVER      = get_setting_bool('USE_GN_SERVER')
 
 GENENETWORK_FILES  = get_setting('GENENETWORK_FILES')
-PHEWAS_FILES       = get_setting('GENENETWORK_FILES')+"/phewas"
-# TEMP_TRAITS        = get_setting('TEMP_TRAITS')
+GUIX_JS_PATH       = get_setting('GUIX_JS_PATH')
+assert_dir(GUIX_JS_PATH)
 
 PYLMM_COMMAND      = pylmm_command()
 GEMMA_COMMAND      = gemma_command()
-GEMMA_RESULTS_PATH = get_setting('GEMMA_RESULTS_PATH')
-assert_dir(GEMMA_RESULTS_PATH)
 PLINK_COMMAND      = plink_command()
 TEMPDIR            = tempdir() # defaults to UNIX TMPDIR
 assert_dir(TEMPDIR)
+
+TWITTER_POST_FETCHER_JS_PATH = GUIX_JS_PATH + "/Twitter-Post-Fetcher"
+assert_dir(TWITTER_POST_FETCHER_JS_PATH)
 
 from six import string_types
 

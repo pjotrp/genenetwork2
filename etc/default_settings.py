@@ -9,7 +9,9 @@
 #   env LOG_SQL=True USE_REDIS=False ./bin/genenetwork2
 #   env LOG_LEVEL=DEBUG ./bin/genenetwork2 ~/gn2_settings.py
 #
-# Note: in the near future we will additionally fetch
+# Typically you need to set GN2_PROFILE too.
+#
+# Note also that in the near future we will additionally fetch
 # settings from a JSON file
 #
 # Note: values for False and 0 have to be strings here - otherwise
@@ -22,11 +24,10 @@
 import os
 import sys
 
-GN_VERSION = open("../VERSION","r").read()
+GN_VERSION = open("../etc/VERSION","r").read()
 SQL_URI = "mysql://gn2:mysql_password@localhost/db_webqtl_s"
-SQLALCHEMY_DATABASE_URI = 'mysql://gn2:mysql_password@localhost/db_webqtl_s'
-SQLALCHEMY_POOL_RECYCLE = 3600
-GN_SERVER_URL = "http://test-gn2.genenetwork.org/"
+SQL_ALCHEMY_POOL_RECYCLE = 3600
+GN_SERVER_URL = "http://localhost:8880/"
 
 # ---- Flask configuration (see website)
 TRAP_BAD_REQUEST_ERRORS = True
@@ -50,27 +51,24 @@ WEBSERVER_URL    = "http://localhost:"+str(SERVER_PORT)+"/" # external URL
 LOG_LEVEL       = 'WARNING' # Logger mode (DEBUG|INFO|WARNING|ERROR|CRITICAL)
 LOG_LEVEL_DEBUG = '0'       # logger.debugf log level (0-5, 5 = show all)
 LOG_SQL         = 'False'   # Log SQL/backend and GN_SERVER calls
-LOG_SQLALCHEMY  = 'False'
+LOG_SQL_ALCHEMY = 'False'
 LOG_BENCH       = True      # Log bench marks
 
 USE_REDIS       = True      # REDIS caching (note that redis will be phased out)
 USE_GN_SERVER   = 'False'   # Use GN_SERVER SQL calls
+HOME            = os.environ['HOME']
 
-# Paths to JS libraries
+# ---- Path overrides for Genenetwork - the defaults are normally
+#      picked up from Guix or in the HOME directory
 
-JS_BIODALLIANCE = os.environ['HOME']+"/genenetwork/biodalliance"
-JS_TWITTER_POST_FETCHER = os.environ['HOME']+"/genenetwork/Twitter-Post-Fetcher"
-
-# ---- Path overrides for Genenetwork
 # TMPDIR is normally picked up from the environment
-HOME=os.environ['HOME']
-LOGFILE = HOME+"/genenetwork2.log"
-GENENETWORK_FILES = HOME+"/gn2_data"  # base dir for all static data files
-LOCAL_PRIVATE_FILES = HOME+"/gn2_private_data" # private static data files
-GEMMA_RESULTS_PATH = HOME+"/tmp/gemma_results"
+# GENENETWORK_FILES   = HOME+"/gn2_data"  # base dir for all static data files
+# PRIVATE_FILES = HOME+"/gn2_private_data" # private static data files (unused)
 
-# ---- GN2 Executables
-# Paths to invoked binaries
-PYLMM_COMMAND = str.strip(os.popen("which pylmm_redis").read())
-PLINK_COMMAND = str.strip(os.popen("which plink2").read())
-GEMMA_COMMAND = str.strip(os.popen("which gemma").read())
+# ---- Local path to JS libraries - for development modules (only)
+# GN2_JS_PATH = os.environ['HOME']+"/genenetwork/javascript" (unused)
+
+# ---- GN2 Executables (overwrite for testing only)
+# PYLMM_COMMAND = str.strip(os.popen("which pylmm_redis").read())
+# PLINK_COMMAND = str.strip(os.popen("which plink2").read())
+# GEMMA_COMMAND = str.strip(os.popen("which gemma").read())
