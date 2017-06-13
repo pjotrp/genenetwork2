@@ -104,11 +104,17 @@ As root configure and run
 :  mysqld --datadir=/var/mysql --initialize-insecure
 :  mkdir -p /var/run/mysqld
 :  chown mysql.mysql ~/mysql /var/run/mysqld
-:  su mysql -c mysqld --datadir=/var/mysql --explicit_defaults_for_timestamp -P 12048
+:  mysqld -u mysql --datadir=/var/mysql --explicit_defaults_for_timestamp -P 12048"
 
-/etc/my.cnf
-[mysqld]
-user=root
+If you want to run as root you may have to set
+
+: /etc/my.cnf
+: [mysqld]
+: user=root
+
+To check error output on start-up run with something like
+
+: mysqld -u mysql --console  --explicit_defaults_for_timestamp  --datadir=/gnu/mysql --log-error=~/test.log
 
 ** Load the small database in MySQL
 
