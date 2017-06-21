@@ -74,13 +74,13 @@ else
     export PATH=$GN2_PROFILE/bin:$PATH
     export PYTHONPATH=$GN2_PROFILE/lib/python2.7/site-packages
     export R_LIBS_SITE=$GN2_PROFILE/site-library
-    export GUIX_JS_PATH=$GN2_PROFILE/share/genenetwork2/javascript
+    export JS_GUIX_PATH=$GN2_PROFILE/share/genenetwork2/javascript
     export GUIX_GTK3_PATH="$GN2_PROFILE/lib/gtk-3.0"
     export GI_TYPELIB_PATH="$GN2_PROFILE/lib/girepository-1.0"
     export XDG_DATA_DIRS="$GN2_PROFILE/share"
     export GIO_EXTRA_MODULES="$GN2_PROFILE/lib/gio/modules"
     export LC_ALL=C # FIXME
-    export GENENETWORK_FILES="$GN2_PROFILE/share/genenetwork2"
+    export GUIX_GENENETWORK_FILES="$GN2_PROFILE/share/genenetwork2"
     export PLINK_COMMAND="$GN2_PROFILE/bin/plink2"
     export PYLMM_COMMAND="$GN2_PROFILE/bin/pylmm_redis"
     export GEMMA_COMMAND="$GN2_PROFILE/bin/gemma"
