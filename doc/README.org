@@ -104,7 +104,7 @@ As root configure and run
 :  mysqld --datadir=/var/mysql --initialize-insecure
 :  mkdir -p /var/run/mysqld
 :  chown mysql.mysql ~/mysql /var/run/mysqld
-:  mysqld -u mysql --datadir=/var/mysql --explicit_defaults_for_timestamp -P 12048"
+:  mysqld -u mysql --datadir=/var/mysql --explicit_defaults_for_timestamp -P 12048
 
 If you want to run as root you may have to set
 
@@ -122,7 +122,7 @@ Other tips are that Guix installs mysqld in your profile, so this may work
 
 When you get errors like:
 
-: qlalchemy.exc.IntegrityError: (_mysql_exceptions.IntegrityError) (1215, 'Cannot add foreign key constraint')
+: sqlalchemy.exc.IntegrityError: (_mysql_exceptions.IntegrityError) (1215, 'Cannot add foreign key constraint')
 
 you may need to set
 
