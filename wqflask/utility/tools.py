@@ -108,13 +108,16 @@ def js_path(module=None):
     raise "No JS path found for "+module+" (check JS_GN_PATH)"
 
 def pylmm_command(guess=None):
-    return valid_bin(get_setting("PYLMM_COMMAND",guess))
+    return assert_bin(get_setting("PYLMM_COMMAND",guess))
 
 def gemma_command(guess=None):
-    return valid_bin(get_setting("GEMMA_COMMAND",guess))
+    return assert_bin(get_setting("GEMMA_COMMAND",guess))
+
+def gemma_wrapper_command(guess=None):
+    return assert_bin(get_setting("GEMMA_WRAPPER_COMMAND",guess))
 
 def plink_command(guess=None):
-    return valid_bin(get_setting("PLINK_COMMAND",guess))
+    return assert_bin(get_setting("PLINK_COMMAND",guess))
 
 def flat_file_exists(subdir):
     base = get_setting("GENENETWORK_FILES")
@@ -125,6 +128,11 @@ def flat_files(subdir=None):
     if subdir:
         return assert_dir(base+"/"+subdir)
     return assert_dir(base)
+
+def assert_bin(fn):
+    if not valid_bin(fn):
+        raise Exception("ERROR: can not find binary "+fn)
+    return fn
 
 def assert_dir(dir):
     if not valid_path(dir):

@@ -7,6 +7,7 @@ from pprint import pformat as pf
 
 import string
 import math
+import random
 import sys
 import datetime
 import os
@@ -30,6 +31,7 @@ from flask import Flask, g
 from base.trait import GeneralTrait
 from base import data_set
 from base import species
+from base import webqtlConfig
 from utility import webqtlUtil
 from utility import helper_functions
 from utility import Plot, Bunch
@@ -78,12 +80,22 @@ class MarkerRegression(object):
                     self.vals.append(value)
 
         self.mapping_method = start_vars['method']
+        if "results_path" in start_vars:
+            self.mapping_results_path = start_vars['results_path']
+        else:
+            mapping_results_filename = self.dataset.group.name + "_" + ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+            self.mapping_results_path = "{}{}.csv".format(webqtlConfig.GENERATED_IMAGE_DIR, mapping_results_filename)
+
         if start_vars['manhattan_plot'] == "True":
             self.manhattan_plot = True
         else:
             self.manhattan_plot = False
 
         self.maf = start_vars['maf'] # Minor allele frequency
+        if "use_loco" in start_vars:
+            self.use_loco = start_vars['use_loco']
+        else:
+            self.use_loco = None
         self.suggestive = ""
         self.significant = ""
         self.pair_scan = False # Initializing this since it is checked in views to determine which template to use
@@ -92,6 +104,7 @@ class MarkerRegression(object):
         self.num_perm = 0
         self.perm_output = []
         self.bootstrap_results = []
+        self.covariates = start_vars['covariates']
 
         #ZS: This is passed to GN1 code for single chr mapping
         self.selected_chr = -1
@@ -148,12 +161,16 @@ class MarkerRegression(object):
             self.showGenes = "ON"
             self.viewLegend = "ON"
 
+        if 'genofile' in start_vars:
+          if start_vars['genofile'] != "":
+            self.genofile_string = start_vars['genofile']
+            self.dataset.group.genofile = self.genofile_string.split(":")[0]
         self.dataset.group.get_markers()
-        if self.mapping_method == "gemma":
+        if self.mapping_method == "gemma" or self.mapping_method == "gemma_bimbam":
             self.score_type = "-log(p)"
             self.manhattan_plot = True
             with Bench("Running GEMMA"):
-                marker_obs = gemma_mapping.run_gemma(self.dataset, self.samples, self.vals)
+                marker_obs = gemma_mapping.run_gemma(self.dataset, self.samples, self.vals, self.covariates, self.mapping_method, self.use_loco)
             results = marker_obs
         elif self.mapping_method == "rqtl_plink":
             results = self.run_rqtl_plink()
@@ -162,11 +179,10 @@ class MarkerRegression(object):
             self.mapping_scale = "morgan"
             self.control_marker = start_vars['control_marker']
             self.do_control = start_vars['do_control']
-            self.dataset.group.genofile = start_vars['genofile']
             self.method = start_vars['mapmethod_rqtl_geno']
             self.model = start_vars['mapmodel_rqtl_geno']
-            if start_vars['pair_scan'] == "true":
-                self.pair_scan = True
+            #if start_vars['pair_scan'] == "true":
+            #    self.pair_scan = True
             if self.permCheck and self.num_perm > 0:
                 self.perm_output, self.suggestive, self.significant, results = rqtl_mapping.run_rqtl_geno(self.vals, self.dataset, self.method, self.model, self.permCheck, self.num_perm, self.do_control, self.control_marker, self.manhattan_plot, self.pair_scan)
             else:
@@ -198,7 +214,6 @@ class MarkerRegression(object):
 
             self.control_marker = start_vars['control_marker']
             self.do_control = start_vars['do_control']
-            self.dataset.group.genofile = start_vars['genofile']
             logger.info("Running qtlreaper")
             results, self.json_data, self.perm_output, self.suggestive, self.significant, self.bootstrap_results = qtlreaper_mapping.gen_reaper_results(self.this_trait,
                                                                                                                                                         self.dataset,
@@ -217,7 +232,6 @@ class MarkerRegression(object):
             #results = self.run_plink()
         elif self.mapping_method == "pylmm":
             logger.debug("RUNNING PYLMM")
-            self.dataset.group.genofile = start_vars['genofile']
             if self.num_perm > 0:
                 self.run_permutations(str(temp_uuid))
             results = self.gen_data(str(temp_uuid))
@@ -262,6 +276,8 @@ class MarkerRegression(object):
                         highest_chr = marker['chr']
                     if ('lod_score' in marker.keys()) or ('lrs_value' in marker.keys()):
                         self.qtl_results.append(marker)
+
+            export_mapping_results(self.dataset, self.this_trait, self.qtl_results, self.mapping_results_path, self.mapping_scale, self.score_type)
 
             self.trimmed_markers = trim_markers_for_table(results)
 
@@ -591,6 +607,38 @@ def create_snp_iterator_file(group):
 
     with gzip.open(snp_file_base, "wb") as fh:
         pickle.dump(data, fh, pickle.HIGHEST_PROTOCOL)
+
+def export_mapping_results(dataset, trait, markers, results_path, mapping_scale, score_type):
+    with open(results_path, "w+") as output_file:
+        output_file.write("Population: " + dataset.group.species.title() + " " + dataset.group.name + "\n")
+        output_file.write("Data Set: " + dataset.fullname + "\n")
+        if dataset.type == "ProbeSet":
+            output_file.write("Gene Symbol: " + trait.symbol + "\n")
+            output_file.write("Location: " + str(trait.chr) + " @ " + str(trait.mb) + " Mb\n")
+        output_file.write("\n")
+        output_file.write("Name,Chr,")
+        if mapping_scale == "physic":
+            output_file.write("Mb," + score_type)
+        else:
+            output_file.write("Cm," + score_type)
+        if "additive" in markers[0].keys():
+            output_file.write(",Additive")
+        if "dominance" in markers[0].keys():
+            output_file.write(",Dominance")
+        output_file.write("\n")
+        for i, marker in enumerate(markers):
+            logger.debug("THE MARKER:", marker)
+            output_file.write(marker['name'] + "," + str(marker['chr']) + "," + str(marker['Mb']) + ",")
+            if "lod_score" in marker.keys():
+                output_file.write(str(marker['lod_score']))
+            else:
+                output_file.write(str(marker['lrs_value']))
+            if "additive" in marker.keys():
+                output_file.write("," + str(marker['additive']))
+            if "dominance" in marker.keys():
+                output_file.write("," + str(marker['dominance']))
+            if i < (len(markers) - 1):
+                output_file.write("\n")
 
 def trim_markers_for_table(markers):
     num_markers = len(markers)
