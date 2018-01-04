@@ -1,5 +1,70 @@
 * Development
 
+This document describes how to deploy the development source tree of
+GN2 in the context of a GNU Guix profile.
+
+** Introduction
+
+The idea is simple. To run GN2 you need to install a GNU Guix package
+of the software and all dependencies. Next set up a database and run
+the web server from the source tree.
+
+** Start from git sources
+
+To build the exact same dependencies you need to checkout two git
+repositories and their specific branches. Currently
+https://gitlab.com/genenetwork/guix/tree/gn-testing (note the
+gn-testing branch) and
+https://gitlab.com/genenetwork/guix-bioinformatics (master).
+
+Note that you need git, i.e.,
+
+: guix package --no-grafts -i git nss-certs
+
+and
+
+: mkdir ~/genenetwork
+: cd ~/genenetwork
+: git clone https://gitlab.com/genenetwork/guix-bioinformatics.git
+: git clone https://gitlab.com/genenetwork/guix.git -b gn-testing
+: cd guix
+
+now build guix according to 'Building GNU Guix from source (using
+Guix) - the bullet proof way' in
+https://gitlab.com/pjotrp/guix-notes/blob/master/INSTALL.org.
+
+With that run
+
+#+begin_src sh   :lang bash
+env GUIX_PACKAGE_PATH=../guix-bioinformatics/ ./pre-inst-env guix package -A genene
+  genenetwork2    2.10rc5-1538ffd out     ../guix-bioinformatics/gn/packages/genenetwork.scm:170:2
+  genenetwork2-database-small     1.0     out     ../guix-bioinformatics/gn/packages/genenetwork.scm:318:4
+  genenetwork2-files-small        1.0     out     ../guix-bioinformatics/gn/packages/genenetwork.scm:276:4
+#+end_src
+
+and install the software with
+
+#+begin_src sh   :lang bash
+env GUIX_PACKAGE_PATH=../guix-bioinformatics/ ./pre-inst-env guix package -i genenetwork2 --no-grafts --substitute-urls="http://guix.genenetwork.org https://berlin.guixsd.org https://mirror.hydra.gnu.org" --dry-run
+#+end_src
+
+Note that if you are using the correct git checkouts and guix is
+functioning correctly *all* packages should install as binaries (Guix
+should not start building software from source). This is because we
+built the exact same binaries using the exact same method on
+http://guix.genenetwork.org/. Make sure you added the key for relevant
+substitute servers with
+
+: guix archive --authorize
+
+When Guix starts building software it means one of:
+
+1. The cloned repositories are not the same
+2. Guix does not have the trusted key installed for guix.genenetwork.org
+3. Guix was not compiled correctly on your machine
+
+Note also that this is a 1.5 GB download, even in binary form.
+
 ** Using GN2_PROFILE
 
 After cloning the git source tree you can run the contained GN2 using
@@ -22,7 +87,31 @@ and use that instead.
 
 Note that the genenetwork2 script sets up the environment for running
 the webserver. This includes path to R modules and python modules. These
-are output on startup. To make sure there is no environment pollution you can
+are output on startup. To make sure there is no environment pollution.
+
+** Checkout the current source tree
+
+Check out the tree (testing branch)
+
+#+begin_src sh   :lang bash
+cd ~/genenetwork
+git clone https://github.com/genenetwork/genenetwork2.git -b testing
+#+end_src
+
+Now run the script using your earlier profile, e.g.
+
+#+begin_src sh   :lang bash
+cd genenetwork2
+env GN2_PROFILE=/home/wrk/opt/gn-latest-guix ./bin/genenetwork2
+#+end_src
+
+If you get an error Exception: ERROR: can not find directory
+/home/wrk/gn2_data/genotype make sure to point the file path
+containing the genotype dir. For example
+
+: env GN2_PROFILE=/home/wrk/opt/genenetwork \
+:   GENENETWORK_FILES=/gnu/store/zy6yjw475vcws4fz2kigrsi5z1yb13ha-genenetwork2-files-small-1.0/share/genenetwork2 \
+:   ./bin/genenetwork2
 
 ** Javascript modules
 
