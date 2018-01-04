@@ -96,13 +96,14 @@ def get_groups(species):
         Cursor.execute("""select InbredSet.Name, InbredSet.FullName from InbredSet,
                        Species,
                        ProbeFreeze, GenoFreeze, PublishFreeze where Species.Name = '%s'
-                       and InbredSet.SpeciesId = Species.Id and InbredSet.Name != 'BXD300' and
+                       and InbredSet.SpeciesId = Species.Id and
                        (PublishFreeze.InbredSetId = InbredSet.Id
                         or GenoFreeze.InbredSetId = InbredSet.Id
                         or ProbeFreeze.InbredSetId = InbredSet.Id)
                         group by InbredSet.Name
-                        order by InbredSet.Name""" % species_name)
-        groups[species_name] = list(Cursor.fetchall())
+                        order by InbredSet.FullName""" % species_name)
+        results = Cursor.fetchall()
+        groups[species_name] = list(results)
     return groups
 
 
@@ -251,7 +252,7 @@ def build_datasets(species, group, type_name):
                     ProbeSetFreeze.ProbeFreezeId = ProbeFreeze.Id and Tissue.Name = '%s' and
                     ProbeFreeze.TissueId = Tissue.Id and ProbeFreeze.InbredSetId = InbredSet.Id and
                     ProbeSetFreeze.confidentiality < 1 and ProbeSetFreeze.public > 0 order by
-                    ProbeSetFreeze.CreateTime desc""" % (species, group, type_name))
+                    ProbeSetFreeze.OrderList asc""" % (species, group, type_name))
 
         dataset_results = Cursor.fetchall()
         datasets = []

@@ -171,11 +171,14 @@ class MarkerRegression(object):
         self.dataset = start_vars['dataset']
         self.this_trait = start_vars['this_trait']
         self.species = start_vars['species']
+        if 'genofile_string' in start_vars:
+            self.genofile_string = start_vars['genofile_string']
 
         #Needing for form submission when doing single chr mapping or remapping after changing options
         self.samples = start_vars['samples']
         self.vals = start_vars['vals']
         self.mapping_method = start_vars['mapping_method']
+        self.mapping_results_path = start_vars['mapping_results_path']
         if self.mapping_method == "rqtl_geno":
             self.mapmethod_rqtl_geno = start_vars['method']
             self.mapmodel_rqtl_geno = start_vars['model']
@@ -253,6 +256,12 @@ class MarkerRegression(object):
             self.controlLocus = start_vars['control_marker']
         else:
             self.controlLocus = ""
+        if 'covariates' in start_vars.keys():
+            self.covariates = start_vars['covariates']
+        if 'maf' in start_vars.keys():
+            self.maf = start_vars['maf']
+        if 'use_loco' in start_vars.keys():
+            self.use_loco = start_vars['use_loco']
 
         #try:
         self.selectedChr = int(start_vars['selected_chr'])
@@ -445,7 +454,7 @@ class MarkerRegression(object):
         if self.haplotypeAnalystChecked and self.selectedChr > -1:
            #thisTrait = self.traitList[0]
            thisTrait = self.this_trait
-           _strains, _vals, _vars = thisTrait.export_informative()
+           _strains, _vals, _vars, _aliases = thisTrait.export_informative()
            smd=[]
            for ii, _val in enumerate(_vals):
                temp = GeneralObject(name=_strains[ii], value=_val)
@@ -1050,7 +1059,10 @@ class MarkerRegression(object):
             startPosY = 15
             nCol = 2
             smallLabelFont = pid.Font(ttf="trebuc", size=12*fontZoom, bold=1)
-            leftOffset = xLeftOffset+(nCol-1)*200*fontZoom
+            if self.manhattan_plot:
+                leftOffset = xLeftOffset
+            else:
+                leftOffset = xLeftOffset+(nCol-1)*200*fontZoom
             canvas.drawPolygon(((leftOffset+6, startPosY-6), (leftOffset, startPosY+6), (leftOffset+12, startPosY+6)), edgeColor=pid.black, fillColor=self.TRANSCRIPT_LOCATION_COLOR, closed=1)
             canvas.drawString("Sequence Site", (leftOffset+15), (startPosY+5), smallLabelFont, self.TOP_RIGHT_INFO_COLOR)
 
@@ -1141,9 +1153,10 @@ class MarkerRegression(object):
         labelFont=pid.Font(ttf="trebuc",size=12*fontZoom, bold=1)
         startPosY = 15
         stepPosY = 12*fontZoom
-        canvas.drawLine(xLeftOffset,startPosY,xLeftOffset+32,startPosY,color=self.LRS_COLOR, width=2)
-        canvas.drawString(self.LRS_LOD, xLeftOffset+40,startPosY+5,font=labelFont,color=pid.black)
-        startPosY += stepPosY
+        if self.manhattan_plot != True:
+            canvas.drawLine(xLeftOffset,startPosY,xLeftOffset+32,startPosY,color=self.LRS_COLOR, width=2)
+            canvas.drawString(self.LRS_LOD, xLeftOffset+40,startPosY+5,font=labelFont,color=pid.black)
+            startPosY += stepPosY
 
         if self.additiveChecked:
             startPosX = xLeftOffset
@@ -1363,7 +1376,10 @@ class MarkerRegression(object):
 
                 #draw gray blocks for 3' and 5' UTR blocks
                 if cdsStart and cdsEnd:
-
+                    logger.debug("txStart:", txStart)
+                    logger.debug("cdsStart:", cdsStart)
+                    logger.debug("txEnd:", txEnd)
+                    logger.debug("cdsEnd:", cdsEnd)
                     utrStartPix = (txStart-startMb)*plotXScale + xLeftOffset
                     utrEndPix = (cdsStart-startMb)*plotXScale + xLeftOffset
                     if (utrStartPix < xLeftOffset):
@@ -1374,9 +1390,10 @@ class MarkerRegression(object):
                         utrEndPix = xLeftOffset + plotWidth
                     if (utrStartPix > xLeftOffset + plotWidth):
                         utrStartPix = xLeftOffset + plotWidth
-                    canvas.drawRect(utrStartPix, geneYLocation, utrEndPix, (geneYLocation+self.EACH_GENE_HEIGHT*zoom), edgeColor=utrColor, fillColor =utrColor)
+                    #canvas.drawRect(utrStartPix, geneYLocation, utrEndPix, (geneYLocation+self.EACH_GENE_HEIGHT*zoom), edgeColor=utrColor, fillColor =utrColor)
 
-                    if self.DRAW_UTR_LABELS and self.endMb - self.startMb <= self.DRAW_UTR_LABELS_MB:
+                    #if self.DRAW_UTR_LABELS and self.endMb - self.startMb <= self.DRAW_UTR_LABELS_MB:
+                    if self.endMb - self.startMb <= self.DRAW_UTR_LABELS_MB:
                         if strand == "-":
                             labelText = "3'"
                         else:
@@ -1395,10 +1412,11 @@ class MarkerRegression(object):
                         utrEndPix = xLeftOffset + plotWidth
                     if (utrStartPix > xLeftOffset + plotWidth):
                         utrStartPix = xLeftOffset + plotWidth
-                    canvas.drawRect(utrStartPix, geneYLocation, utrEndPix, (geneYLocation+self.EACH_GENE_HEIGHT*zoom), edgeColor=utrColor, fillColor =utrColor)
+                    #canvas.drawRect(utrStartPix, geneYLocation, utrEndPix, (geneYLocation+self.EACH_GENE_HEIGHT*zoom), edgeColor=utrColor, fillColor =utrColor)
 
-                    if self.DRAW_UTR_LABELS and self.endMb - self.startMb <= self.DRAW_UTR_LABELS_MB:
-                        if tstrand == "-":
+                    #if self.DRAW_UTR_LABELS and self.endMb - self.startMb <= self.DRAW_UTR_LABELS_MB:
+                    if self.endMb - self.startMb <= self.DRAW_UTR_LABELS_MB:
+                        if strand == "-":
                             labelText = "5'"
                         else:
                             labelText = "3'"
@@ -1434,7 +1452,7 @@ class MarkerRegression(object):
 
         #thisTrait = self.traitList[0]
         thisTrait = self.this_trait
-        _strains, _vals, _vars = thisTrait.export_informative()
+        _strains, _vals, _vars, _aliases = thisTrait.export_informative()
 
         smd=[]
         for ii, _val in enumerate(_vals):
@@ -1783,9 +1801,10 @@ class MarkerRegression(object):
                             distScale = 10
                         else:
                             distScale = 5
-                    for tickdists in range(distScale, int(ceil(distLen)), distScale):
+                    for i, tickdists in enumerate(range(distScale, int(ceil(distLen)), distScale)):
                         canvas.drawLine(startPosX + tickdists*plotXScale, yZero, startPosX + tickdists*plotXScale, yZero + 7, color=pid.black, width=1*zoom)
-                        canvas.drawString(str(tickdists), startPosX+tickdists*plotXScale, yZero + 10*zoom, color=pid.black, font=MBLabelFont, angle=270)
+                        if i % 2 == 0:
+                            canvas.drawString(str(tickdists), startPosX+tickdists*plotXScale, yZero + 10*zoom, color=pid.black, font=MBLabelFont, angle=270)
                     startPosX +=  (self.ChrLengthDistList[i]+self.GraphInterval)*plotXScale
 
             megabaseLabelFont = pid.Font(ttf="verdana", size=18*zoom*1.5, bold=0)
@@ -2719,9 +2738,9 @@ class MarkerRegression(object):
                                                "Human Chr",
                                                "Mb Start (hg19)",
                                                "Literature Correlation",
-                                               "Gene Description",
-                                               "PolymiRTS Database" + HT.Href(url='http://compbio.uthsc.edu/miRSNP/', text='>>', target="_blank").__str__(),
-                                               "Gene Weaver Info Content" + HT.Href(url='http://geneweaver.org/', text='>>', target="_blank").__str__()]
+                                               "Gene Description"]
+                                               #"PolymiRTS Database" + HT.Href(url='http://compbio.uthsc.edu/miRSNP/', text='>>', target="_blank").__str__(),
+                                               #"Gene Weaver Info Content" + HT.Href(url='http://geneweaver.org/', text='>>', target="_blank").__str__()]
 
                 # gene_tblobj_header = [[THCell(HT.TD('Index', HT.BR(), HT.BR(), align='left', width=50, Class=col_class), text="index", idx=0),
                         # THCell(HT.TD('Symbol', HT.BR(), HT.BR(), align='left', width=100, Class=col_class), text="symbol", idx=1),
@@ -2750,9 +2769,9 @@ class MarkerRegression(object):
                                           "Avg Expr",
                                           "Human Chr",
                                           "Mb Start (hg19)",
-                                          "Gene Description",
-                                          "PolymiRTS Database" + HT.Href(url='http://compbio.uthsc.edu/miRSNP/', text='>>', target="_blank").__str__(),
-                                          "Gene Weaver Info Content" + HT.Href(url='http://geneweaver.org/', text='>>', target="_blank").__str__()]
+                                          "Gene Description"]
+                                          #"PolymiRTS Database" + HT.Href(url='http://compbio.uthsc.edu/miRSNP/', text='>>', target="_blank").__str__(),
+                                          #"Gene Weaver Info Content" + HT.Href(url='http://geneweaver.org/', text='>>', target="_blank").__str__()]
 
                 # gene_tblobj_header = [[THCell(HT.TD('Index', HT.BR(), HT.BR(), align='left', width=50, Class=col_class), text="index", idx=0),
                         # THCell(HT.TD('Symbol', HT.BR(), HT.BR(), align='left', width=100, Class=col_class), text="symbol", idx=1),
@@ -2928,9 +2947,9 @@ class MarkerRegression(object):
                                     humanChr,
                                     HT.Href(humanStartString, humanStartDisplay, target="_blank").__str__(),
                                     literatureCorrelationString,
-                                    geneDescription,
-                                    polymiRTS,
-                                    ""]
+                                    geneDescription]
+                                    #polymiRTS,
+
 
                         # this_row.append(TDCell(HT.TD(tableIterationsCnt, selectCheck, width=30, align='right', Class=className), tableIterationsCnt, tableIterationsCnt))
                         # this_row.append(TDCell(HT.TD(HT.Href(geneIdString, theGO["GeneSymbol"], target="_blank"), "&nbsp;", probeSetSearch, align='right', Class=className), theGO["GeneSymbol"], theGO["GeneSymbol"]))
@@ -2958,9 +2977,8 @@ class MarkerRegression(object):
                                     avgExpr,
                                     humanChr,
                                     HT.Href(humanStartString, humanStartDisplay, target="_blank").__str__(),
-                                    geneDescription,
-                                    polymiRTS,
-                                    ""]
+                                    geneDescription]
+                                    #polymiRTS,
 
 
                         # this_row.append(TDCell(HT.TD(tableIterationsCnt, selectCheck, width=30, align='right', Class=className), tableIterationsCnt, tableIterationsCnt))
