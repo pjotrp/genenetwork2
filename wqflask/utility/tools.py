@@ -288,6 +288,7 @@ assert_dir(TEMPDIR)
 JS_GUIX_PATH = get_setting("JS_GUIX_PATH")
 assert_dir(JS_GUIX_PATH)
 assert_dir(JS_GUIX_PATH+'/cytoscape-panzoom')
+assert_dir(JS_GUIX_PATH+'/DataTables')
 CSS_PATH = "UNKNOWN"
 # assert_dir(JS_PATH)
 JS_TWITTER_POST_FETCHER_PATH = get_setting("JS_TWITTER_POST_FETCHER_PATH",js_path("Twitter-Post-Fetcher"))

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Mapping Results{% endblock %}
 {% block css %}
-    <link rel="stylesheet" type="text/css" href="/static/new/packages/DataTables/css/jquery.dataTables.css" />
+    <link rel="stylesheet" type="text/css" href="/js/DataTables/css/jquery.dataTables.css" />
     <link rel="stylesheet" type="text/css" href="/static/packages/DT_bootstrap/DT_bootstrap.css" />
 
     <link rel="stylesheet" type="text/css" href="/static/new/css/marker_regression.css" />
@@ -293,8 +293,8 @@
 
     <script language="javascript" type="text/javascript" src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
     <script language="javascript" type="text/javascript" src="https://cdn.datatables.net/buttons/1.0.0/js/dataTables.buttons.min.js"></script>
-    <script language="javascript" type="text/javascript" src="/static/new/packages/DataTables/js/dataTables.scientific.js"></script>
-    <script language="javascript" type="text/javascript" src="/static/new/packages/DataTables/js/dataTables.naturalSort.js"></script>
+    <script language="javascript" type="text/javascript" src="/js/DataTables/js/dataTables.scientific.js"></script>
+    <script language="javascript" type="text/javascript" src="/js/DataTables/js/dataTables.naturalSort.js"></script>
 
     {% if mapping_method != "gemma" and mapping_method != "plink" %}
     <script>
