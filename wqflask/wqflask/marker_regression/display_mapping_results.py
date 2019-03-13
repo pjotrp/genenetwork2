@@ -44,6 +44,7 @@ from utility import Plot
 from utility.benchmark import Bench
 from wqflask.interval_analyst import GeneUtil
 from base.webqtlConfig import TMPDIR, GENERATED_TEXT_DIR, GENERATED_IMAGE_DIR
+from utility.pillow_utils import draw_rotated_text, draw_open_polygon
 
 import utility.logger
 logger = utility.logger.getLogger(__name__ )
@@ -690,7 +691,7 @@ class DisplayMappingResults(object):
                     im_drawer.rectangle(
                         xy=((item[0], yZero),
                             (item[1], yZero - item[2]*bootHeightThresh/maxBootCount)),
-                        fill=self.BOOTSTRAP_BOX_COLOR)
+                        fill=self.BOOTSTRAP_BOX_COLOR, outline=BLACK)
 
         ###draw boot scale
         highestPercent = (maxBootCount*100.0)/nboot
@@ -703,12 +704,13 @@ class DisplayMappingResults(object):
         im_drawer.rectangle(
             xy=((canvas.size[0]-bootOffset, yZero-bootHeightThresh),
                 (canvas.size[0]-bootOffset-15*zoom,yZero)),
-            fill = YELLOW)
+            fill = YELLOW, outline=BLACK)
         im_drawer.line(
             xy=((canvas.size[0]-bootOffset+4, yZero),
                 (canvas.size[0]-bootOffset, yZero)),
             fill=BLACK)
-        im_drawer.text(xy=(canvas.size[0]-bootOffset+10,yZero+5), text='0%',
+        TEXT_Y_DISPLACEMENT = -8
+        im_drawer.text(xy=(canvas.size[0]-bootOffset+10,yZero+TEXT_Y_DISPLACEMENT), text='0%',
                        font=bootScaleFont, fill=BLACK)
 
         for item in bootScale:
@@ -719,8 +721,8 @@ class DisplayMappingResults(object):
                 xy=((canvas.size[0]-bootOffset+4,bootY),
                  (canvas.size[0]-bootOffset,bootY)),
                 fill=BLACK)
-            im_drawer.text(xy=(canvas.size[0]-bootOffset+10,bootY+5),
-                           text='%2.1f'%item, font=bootScaleFont, color=BLACK)
+            im_drawer.text(xy=(canvas.size[0]-bootOffset+10,bootY+TEXT_Y_DISPLACEMENT),
+                           text='%2.1f'%item, font=bootScaleFont, fill=BLACK)
 
         if self.legendChecked:
             startPosY = 30
@@ -729,10 +731,10 @@ class DisplayMappingResults(object):
             leftOffset = xLeftOffset+(nCol-1)*200
             im_drawer.rectangle(
                 xy=((leftOffset,startPosY-6), (leftOffset+12,startPosY+6)),
-                fill=YELLOW)
-            im_drawer.text(xy=(leftOffset+ 20, startPosY+5),
+                fill=YELLOW, outline=BLACK)
+            im_drawer.text(xy=(leftOffset+ 20, startPosY+TEXT_Y_DISPLACEMENT),
                            text='Frequency of the Peak LRS',
-                           font=smallLabelFont, color=BLACK)
+                           font=smallLabelFont, fill=BLACK)
 
     def drawProbeSetPosition(self, canvas, plotXScale, offset= (40, 120, 80, 10), zoom = 1, startMb = None, endMb = None):
         im_drawer = ImageDraw.Draw(canvas)
@@ -803,10 +805,12 @@ class DisplayMappingResults(object):
                             break
         if locPixel >= 0 and self.plotScale == 'physic':
             traitPixel = ((locPixel, yZero), (locPixel-6, yZero+12), (locPixel+6, yZero+12))
-            im_drawer.polygon(
-                xy=traitPixel, outline=BLACK,
-                fill=self.TRANSCRIPT_LOCATION_COLOR#, closed=1
-            )
+            # im_drawer.polygon(
+            #     xy=traitPixel, outline=BLACK,
+            #     fill=self.TRANSCRIPT_LOCATION_COLOR#, closed=1
+            # )
+            draw_open_polygon(canvas, xy=traitPixel, outline=BLACK,
+                              fill=self.TRANSCRIPT_LOCATION_COLOR)
 
         if self.legendChecked:
             startPosY = 15
@@ -816,16 +820,25 @@ class DisplayMappingResults(object):
                 leftOffset = xLeftOffset
             else:
                 leftOffset = xLeftOffset+(nCol-1)*200*fontZoom
-            im_drawer.polygon(
+            # im_drawer.polygon(
+            #     xy=(
+            #         (leftOffset+6, startPosY-6),
+            #         (leftOffset, startPosY+6),
+            #         (leftOffset+12, startPosY+6)),
+            #     outline=BLACK, fill=self.TRANSCRIPT_LOCATION_COLOR#, closed=1
+            # )
+            draw_open_polygon(
+                canvas,
                 xy=(
                     (leftOffset+6, startPosY-6),
                     (leftOffset, startPosY+6),
                     (leftOffset+12, startPosY+6)),
-                outline=BLACK, fill=self.TRANSCRIPT_LOCATION_COLOR#, closed=1
+                outline=BLACK, fill=self.TRANSCRIPT_LOCATION_COLOR
             )
+            TEXT_Y_DISPLACEMENT = -8
             im_drawer.text(
                 text="Sequence Site",
-                xy=(leftOffset+15,startPosY+5), font=smallLabelFont,
+                xy=(leftOffset+15,startPosY+TEXT_Y_DISPLACEMENT), font=smallLabelFont,
                 fill=self.TOP_RIGHT_INFO_COLOR)
 
     def drawSNPTrackNew(self, canvas, offset= (40, 120, 80, 10), zoom = 1, startMb = None, endMb = None):
@@ -900,7 +913,7 @@ class DisplayMappingResults(object):
             im_drawer.rectangle(
                 xy=((rightShift,yPaddingTop+kstep*15),
                     (rectWidth+rightShift,yPaddingTop+10+kstep*15)),
-                fill=thisLRSColor)
+                fill=thisLRSColor, outline=BLACK)
             im_drawer.text(
                 text=name,xy=(rectWidth+2+rightShift,yPaddingTop+10+kstep*15),
                 font=colorFont,fill=BLACK)
@@ -916,6 +929,7 @@ class DisplayMappingResults(object):
         plotWidth = canvas.size[0] - xLeftOffset - xRightOffset
         plotHeight = canvas.size[1] - yTopOffset - yBottomOffset
         yZero = canvas.size[1] - yBottomOffset
+        TEXT_Y_DISPLACEMENT = -8
         fontZoom = zoom
         if zoom == 2:
             fontZoom = 1.5
@@ -928,7 +942,7 @@ class DisplayMappingResults(object):
                 xy=((xLeftOffset,startPosY),(xLeftOffset+32,startPosY)),
                 fill=self.LRS_COLOR, width=2)
             im_drawer.text(
-                text=self.LRS_LOD, xy=(xLeftOffset+40,startPosY+5),
+                text=self.LRS_LOD, xy=(xLeftOffset+40,startPosY+TEXT_Y_DISPLACEMENT),
                 font=labelFont,fill=BLACK)
             startPosY += stepPosY
 
@@ -941,7 +955,7 @@ class DisplayMappingResults(object):
                 xy=((startPosX+18,startPosY),(startPosX+32,startPosY)),
                 fill=self.ADDITIVE_COLOR_NEGATIVE, width=2)
             im_drawer.text(
-                text='Additive Effect',xy=(startPosX+40,startPosY+5),
+                text='Additive Effect',xy=(startPosX+40,startPosY+TEXT_Y_DISPLACEMENT),
                 font=labelFont,fill=BLACK)
 
         if self.genotype.type == 'intercross' and self.dominanceChecked:
@@ -987,10 +1001,10 @@ class DisplayMappingResults(object):
                 fill=self.SUGGESTIVE_COLOR, width=self.SUGGESTIVE_WIDTH)
             im_drawer.text(
                 text='Significant %s = %2.2f' % (self.LRS_LOD,self.significant),
-                xy=(xLeftOffset+42,startPosY +5),font=labelFont,fill=BLACK)
+                xy=(xLeftOffset+42,startPosY+TEXT_Y_DISPLACEMENT),font=labelFont,fill=BLACK)
             im_drawer.text(
                 text='Suggestive %s = %2.2f' % (self.LRS_LOD, self.suggestive),
-                xy=(xLeftOffset+42,startPosY + 5 +stepPosY),font=labelFont,
+                xy=(xLeftOffset+42,startPosY + TEXT_Y_DISPLACEMENT +stepPosY),font=labelFont,
                 fill=BLACK)
 
         labelFont = ImageFont.truetype(font=VERDANA_FILE,size=12*fontZoom)
@@ -1471,11 +1485,12 @@ class DisplayMappingResults(object):
 
 
                             if lastGene == 0:
-                                im_drawer.text(
-                                    text="%s" % (_chr[j].name),
+                                draw_rotated_text(
+                                    canvas, text="%s" % (_chr[j].name),
+                                    font=ImageFont.truetype(font=VERDANA_FILE,
+                                                            size=12),
                                     xy=(geneStartPix,
                                         geneYLocation+17+2*maxind*self.EACH_GENE_HEIGHT*zoom),
-                                    font=ImageFont.truetype(font=VERDANA_FILE, size=12),
                                     fill=BLACK, angle=-90)
 
                             oldgeneEndPix = geneEndPix;
@@ -1756,18 +1771,20 @@ class DisplayMappingResults(object):
                                 (startPosX+tickdists*plotXScale, yZero + 7)),
                             fill=BLACK, width=1*zoom)
                         if j % 2 == 0:
-                            im_drawer.text(
-                                xy=(startPosX+tickdists*plotXScale, yZero+10*zoom),
-                                text=str(tickdists), fill=BLACK, font=MBLabelFont, angle=270)
+                            draw_rotated_text(
+                                canvas, text=str(tickdists), font=MBLabelFont,
+                                xy=(startPosX+tickdists*plotXScale,
+                                    yZero+10*zoom), fill=BLACK, angle=270)
                     startPosX +=  (self.ChrLengthDistList[i]+self.GraphInterval)*plotXScale
 
+            TEXT_Y_DISPLACEMENT = -15
             megabaseLabelFont = ImageFont.truetype(font=VERDANA_FILE, size=int(18*zoom*1.5))
             im_drawer.text(
                 text="Megabases",
                 xy=(
                     xLeftOffset+(plotWidth-im_drawer.textsize(
                         "Megabases",font=megabaseLabelFont)[0])/2,
-                    strYLoc+MBLabelFont.font.height+10*(zoom%2)+ 10),
+                    strYLoc+MBLabelFont.font.height+10*(zoom%2)+TEXT_Y_DISPLACEMENT),
                 font=megabaseLabelFont, fill=BLACK)
             pass
         else:
@@ -1958,11 +1975,14 @@ class DisplayMappingResults(object):
         LRSLODFont=ImageFont.truetype(font=VERDANA_FILE, size=int(18*zoom*1.5))
         yZero = yTopOffset + plotHeight
 
-        im_drawer.text(
-            text=self.LRS_LOD,
-            xy=(xLeftOffset - im_drawer.textsize("999.99", font=LRSScaleFont)[0] - 15*(zoom-1),
-                yZero - 150 - 300*(zoom - 1)),
-            font=LRSLODFont, fill=BLACK, angle=90)
+        TEXT_X_DISPLACEMENT = -20
+        TEXT_Y_DISPLACEMENT = -215
+        draw_rotated_text(
+            canvas, text=self.LRS_LOD, font=LRSLODFont,
+            xy=(xLeftOffset - im_drawer.textsize(
+                "999.99", font=LRSScaleFont)[0] - 15*(zoom-1) + TEXT_X_DISPLACEMENT,
+                yZero + TEXT_Y_DISPLACEMENT - 300*(zoom - 1)),
+            fill=BLACK, angle=90)
 
         for item in LRSAxisList:
             if LRS_LOD_Max == 0.0:
@@ -1972,10 +1992,11 @@ class DisplayMappingResults(object):
                            fill=self.LRS_COLOR, width=1*zoom)
             scaleStr = "%2.1f" % item
             #Draw the LRS/LOD Y axis label
+            TEXT_Y_DISPLACEMENT = -10
             im_drawer.text(
                 text=scaleStr,
                 xy=(xLeftOffset-4-im_drawer.textsize(scaleStr, font=LRSScaleFont)[0]-5,
-                    yLRS+3),
+                    yLRS+TEXT_Y_DISPLACEMENT),
                 font=LRSScaleFont, fill=self.LRS_COLOR)
 
         if self.permChecked and self.nperm > 0 and not self.multipleInterval:
@@ -2055,12 +2076,14 @@ class DisplayMappingResults(object):
             if qtlresult['chr'] != previous_chr and self.selectedChr == -1:
 
                 if self.manhattan_plot != True:
-                    im_drawer.polygon(
-                        xy=LRSCoordXY,
-                        outline=thisLRSColor
-                        # , closed=0, edgeWidth=lrsEdgeWidth,
-                        # clipX=(xLeftOffset, xLeftOffset + plotWidth)
-                    )
+                    # im_drawer.polygon(
+                    #     xy=LRSCoordXY,
+                    #     outline=thisLRSColor
+                    #     # , closed=0, edgeWidth=lrsEdgeWidth,
+                    #     # clipX=(xLeftOffset, xLeftOffset + plotWidth)
+                    # )
+                    draw_open_polygon(canvas, xy=LRSCoordXY,
+                                      outline=thisLRSColor, width=lrsEdgeWidth)
 
                 if not self.multipleInterval and not self.manhattan_plot and self.additiveChecked:
                     plusColor = self.ADDITIVE_COLOR_POSITIVE
@@ -2187,11 +2210,13 @@ class DisplayMappingResults(object):
                 m += 1
 
         if self.manhattan_plot != True:
-            im_drawer.polygon(
-                xy=LRSCoordXY,
-                outline=thisLRSColor
-                #, closed=0, edgeWidth=lrsEdgeWidth, clipX=(xLeftOffset, xLeftOffset + plotWidth)
-            )
+            # im_drawer.polygon(
+            #     xy=LRSCoordXY,
+            #     outline=thisLRSColor
+            #     #, closed=0, edgeWidth=lrsEdgeWidth, clipX=(xLeftOffset, xLeftOffset + plotWidth)
+            # )
+            draw_open_polygon(canvas, xy=LRSCoordXY, outline=thisLRSColor,
+                              width=lrsEdgeWidth)
 
         if not self.multipleInterval and self.additiveChecked:
             plusColor = self.ADDITIVE_COLOR_POSITIVE
@@ -2330,6 +2355,7 @@ class DisplayMappingResults(object):
             additiveStep = (additiveScale[1]-additiveScale[0])/additiveScale[2]
             additiveAxisList = Plot.frange(0, additiveScale[1], additiveStep)
             addPlotScale = AdditiveHeightThresh/additiveMax
+            TEXT_Y_DISPLACEMENT = -8
 
             additiveAxisList.append(additiveScale[1])
             for item in additiveAxisList:
@@ -2341,7 +2367,7 @@ class DisplayMappingResults(object):
                 scaleStr = "%2.3f" % item
                 im_drawer.text(
                     text=scaleStr,
-                    xy=(xLeftOffset + plotWidth +6,additiveY+5),
+                    xy=(xLeftOffset + plotWidth +6,additiveY+TEXT_Y_DISPLACEMENT),
                     font=additiveScaleFont,fill=self.ADDITIVE_COLOR_POSITIVE)
 
             im_drawer.line(
@@ -2425,7 +2451,8 @@ class DisplayMappingResults(object):
                 chrStartPix = startPosX + (self.ChrLengthDistList[i]*plotXScale -chrNameWidth)/2
                 chrEndPix = startPosX + (self.ChrLengthDistList[i]*plotXScale +chrNameWidth)/2
 
-                im_drawer.text(xy=(chrStartPix, yTopOffset + 20),
+                TEXT_Y_DISPLACEMENT = 0
+                im_drawer.text(xy=(chrStartPix, yTopOffset + TEXT_Y_DISPLACEMENT),
                                text=_chr.name, font=chrLabelFont, fill=BLACK)
                 COORDS = "%d,%d,%d,%d" %(chrStartPix, yTopOffset, chrEndPix,yTopOffset +20)
 
@@ -2450,7 +2477,7 @@ class DisplayMappingResults(object):
         else:
             perm_output = self.perm_output
 
-        Plot.plotBar(myCanvas, perm_output, XLabel=self.LRS_LOD, YLabel='Frequency', title=' Histogram of Permutation Test')
+        Plot.plotBar(myCanvas, perm_output, XLabel=self.LRS_LOD, YLabel='Frequency', labelColor="white", title=' Histogram of Permutation Test')
         filename= webqtlUtil.genRandStr("Reg_")
         myCanvas.save("{}.gif".format(GENERATED_IMAGE_DIR+filename),
                       format='gif')
