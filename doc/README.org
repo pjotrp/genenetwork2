@@ -199,7 +199,11 @@ See [[development.org]].
 * Running ElasticSearch
 
 In order to start up elasticsearch:
-Penguin - change user to "elasticsearch" and use the following command: "env JAVA_HOME=/opt/jdk-9.0.4 /opt/elasticsearch-6.2.1/bin/elasticsearch"
+
+Penguin - change user to "elasticsearch" and use the following
+command:
+
+: env JAVA_HOME=/opt/jdk-9.0.4 /opt/elasticsearch-6.2.1/bin/elasticsearch"
 
 
 ** SystemD
