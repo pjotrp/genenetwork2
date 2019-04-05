@@ -24,12 +24,9 @@ import reaper
 from base.trait import GeneralTrait
 from base import data_set
 from base import species
-# from wqflask.my_pylmm.pyLMM import lmm
-# from wqflask.my_pylmm.pyLMM import input
 from utility import helper_functions
 from utility import Plot, Bunch
 from utility import temp_data
-from utility.tools import PYLMM_COMMAND
 
 from MySQLdb import escape_string as escape
 
@@ -43,12 +40,13 @@ Redis = Redis()
 
 from flask import Flask, g
 
+from utility.logger import getLogger
+logger = getLogger(__name__ )
+
 class Heatmap(object):
 
     def __init__(self, start_vars, temp_uuid):
-
         trait_db_list = [trait.strip() for trait in start_vars['trait_list'].split(',')]
-
         helper_functions.get_trait_db_obs(self, trait_db_list)
 
         self.temp_uuid = temp_uuid
@@ -98,6 +96,7 @@ class Heatmap(object):
         for trait in self.trait_results.keys():
             lodnames.append(trait)
 
+        self.dataset.group.get_markers()
         for marker in self.dataset.group.markers.markers:
             chr_pos.append(marker['chr'])
             pos.append(marker['Mb'])

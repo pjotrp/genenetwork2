@@ -49,7 +49,7 @@ class webqtlCaseData(object):
         if self.variance != None:
             str += " variance=%2.3f" % self.variance
         if self.num_cases:
-            str += " ndata=%d" % self.num_cases
+            str += " ndata=%s" % self.num_cases
         if self.name:
             str += " name=%s" % self.name
         if self.name2:
@@ -81,6 +81,6 @@ class webqtlCaseData(object):
     @property
     def display_num_cases(self):
         if self.num_cases != None:
-            return "%d" % self.num_cases
+            return "%s" % self.num_cases
         else:
             return "x"
