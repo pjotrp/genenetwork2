@@ -9,6 +9,7 @@ import csv
 import simplejson as json
 import xlsxwriter
 import io  # Todo: Use cStringIO?
+import MySQLdb
 
 from zipfile import ZipFile, ZIP_DEFLATED
 
@@ -21,6 +22,15 @@ import base64
 import array
 import sqlalchemy
 from wqflask import app
+
+from gn3.db import fetchone
+from gn3.db import update
+from gn3.db.phenotypes import Phenotype
+from gn3.db.phenotypes import PublishXRef
+from gn3.db.phenotypes import Publication
+
+
+from flask import current_app
 from flask import g
 from flask import Response
 from flask import request
@@ -31,10 +41,8 @@ from flask import redirect
 from flask import url_for
 from flask import send_file
 
-from wqflask import collect
 from wqflask import search_results
 from wqflask import server_side
-from wqflask.submit_bnw import get_bnw_input
 from base.data_set import create_dataset  # Used by YAML in marker_regression
 from wqflask.show_trait import show_trait
 from wqflask.show_trait import export_trait_data
@@ -47,6 +55,7 @@ from wqflask.marker_regression import run_mapping
 from wqflask.marker_regression import display_mapping_results
 from wqflask.network_graph import network_graph
 from wqflask.correlation import show_corr_results
+from wqflask.correlation.correlation_gn3_api import compute_correlation
 from wqflask.correlation_matrix import show_corr_matrix
 from wqflask.correlation import corr_scatter_plot
 from wqflask.wgcna import wgcna_analysis
@@ -57,6 +66,7 @@ from wqflask.export_traits import export_search_results_csv
 from wqflask.gsearch import GSearch
 from wqflask.update_search_results import GSearch as UpdateGSearch
 from wqflask.docs import Docs, update_text
+from wqflask.decorators import admin_login_required
 from wqflask.db_info import InfoPage
 
 from utility import temp_data
@@ -279,6 +289,19 @@ def gsearchact():
     elif type == "phenotype":
         return render_template("gsearch_pheno.html", **result)
 
+@app.route("/gsearch_table", methods=('GET',))
+def gsearchtable():
+    logger.info(request.url)
+
+    gsearch_table_data = GSearch(request.args)
+    current_page = server_side.ServerSideTable(
+        gsearch_table_data.trait_count,
+        gsearch_table_data.trait_list,
+        gsearch_table_data.header_data_names,
+        request.args,
+    ).get_page()
+
+    return flask.jsonify(current_page)
 
 @app.route("/gsearch_updating", methods=('POST',))
 def gsearch_updating():
@@ -400,14 +423,86 @@ def submit_trait_form():
         version=GN_VERSION)
 
 
-@app.route("/edit_trait_form")
-def edit_trait_page():
-    species_and_groups = get_species_groups()
+@app.route("/trait/<name>/edit/<inbred_set_id>")
+@admin_login_required
+def edit_trait(name, inbred_set_id):
+    conn = MySQLdb.Connect(db=current_app.config.get("DB_NAME"),
+                           user=current_app.config.get("DB_USER"),
+                           passwd=current_app.config.get("DB_PASS"),
+                           host=current_app.config.get("DB_HOST"))
+    publish_xref = fetchone(
+        conn=conn,
+        table="PublishXRef",
+        where=PublishXRef(id_=name,
+                          inbred_set_id=inbred_set_id))
+    phenotype_ = fetchone(
+        conn=conn,
+        table="Phenotype",
+        where=Phenotype(id_=publish_xref.phenotype_id))
+    publication_ = fetchone(
+        conn=conn,
+        table="Publication",
+        where=Publication(id_=publish_xref.publication_id))
     return render_template(
         "edit_trait.html",
-        species_and_groups=species_and_groups,
-        gn_server_url=GN_SERVER_URL,
+        publish_xref=publish_xref,
+        phenotype=phenotype_,
+        publication=publication_,
         version=GN_VERSION)
+
+
+@app.route("/trait/update", methods=["POST"])
+def update_trait():
+    conn = MySQLdb.Connect(db=current_app.config.get("DB_NAME"),
+                           user=current_app.config.get("DB_USER"),
+                           passwd=current_app.config.get("DB_PASS"),
+                           host=current_app.config.get("DB_HOST"))
+    # Filter out empty values
+    data_ = {k: v for k, v in request.form.items() if v is not ''}
+
+    # Run updates:
+    updated_phenotypes = update(
+        conn, "Phenotype",
+        data=Phenotype(
+            pre_pub_description=data_.get("pre-pub-desc"),
+            post_pub_description=data_.get("post-pub-desc"),
+            original_description=data_.get("orig-desc"),
+            units=data_.get("units"),
+            pre_pub_abbreviation=data_.get("pre-pub-abbrev"),
+            post_pub_abbreviation=data_.get("post-pub-abbrev"),
+            lab_code=data_.get("labcode"),
+            submitter=data_.get("submitter"),
+            owner=data_.get("owner"),
+        ),
+        where=Phenotype(id_=data_.get("phenotype-id")))
+    updated_publications = update(
+        conn, "Publication",
+        data=Publication(
+            abstract=data_.get("abstract"),
+            authors=data_.get("authors"),
+            title=data_.get("title"),
+            journal=data_.get("journal"),
+            volume=data_.get("volume"),
+            pages=data_.get("pages"),
+            month=data_.get("month"),
+            year=data_.get("year")),
+        where=Publication(id_=data_.get("pubmed-id")))
+    if updated_phenotypes or updated_publications:
+        comments = data_.get("comments")
+        if comments:
+            comments = (f"{comments}\r\n"
+                        f"{g.user_session.record.get(b'user_name')}")
+        update(conn, "PublishXRef",
+               data=PublishXRef(
+                   comments=(f"{data_.get('comments')}\r\n"
+                             "Modified by: "
+                             f"{g.user_session.record.get(b'user_name').decode('utf-8')} "
+                             f"on {str(datetime.datetime.now())}"),
+                   publication_id=data_.get("pubmed-id")),
+               where=PublishXRef(
+                   id_=data_.get("dataset-name"),
+                   inbred_set_id=data_.get("inbred-set-id")))
+    return redirect("/trait/10007/edit/1")
 
 
 @app.route("/create_temp_trait", methods=('POST',))
@@ -704,7 +799,7 @@ def mapping_results_container_page():
 
 @app.route("/loading", methods=('POST',))
 def loading_page():
-    logger.info(request.url)
+    # logger.info(request.url)
     initial_start_vars = request.form
     start_vars_container = {}
     n_samples = 0  # ZS: So it can be displayed on loading page
@@ -950,7 +1045,17 @@ def corr_compute_page():
     template_vars = show_corr_results.CorrelationResults(request.form)
     return render_template("correlation_page.html", **template_vars.__dict__)
 
+    # to test/disable the new  correlation api uncomment these lines
 
+    # correlation_results = compute_correlation(request.form)
+    # return render_template("test_correlation_page.html", correlation_results=correlation_results)
+
+
+@app.route("/test_corr_compute", methods=["POST"])
+def test_corr_compute_page():
+    correlation_data = compute_correlation(request.form)
+    return render_template("test_correlation_page.html", **correlation_data)
+    
 @app.route("/corr_matrix", methods=('POST',))
 def corr_matrix_page():
     logger.info("In corr_matrix, request.form is:", pf(request.form))
