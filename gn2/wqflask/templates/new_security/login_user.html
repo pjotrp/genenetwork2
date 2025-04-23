@@ -1,0 +1,119 @@
+{% extends "index_page.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+
+    <div class="container" style="min-width: 1250px;">
+
+        {{ flash_me() }}
+
+        <h3>Sign in here.</h3>
+
+	    {% if redis_is_available: %}
+            <form class="form-horizontal" action="/n/login" method="POST" name="login_user_form" id="loginUserForm">
+                 <input name="anon_id" type="hidden" value="{{ g.user_session.user_id }}">
+                 <fieldset>
+                    <div class="form-group">
+                        <label style="text-align:left;" class="col-xs-1 control-label" for="email_address">Email&nbsp;Address</label>
+                        <div style="margin-left:20px;" class="col-xs-4">
+                            <input id="email_address" class="focused" name="email_address" type="text" value="" size="50">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="text-align:left;" class="col-xs-1 control-label" for="password">Password</label>
+                        <div style="margin-left:20px;" class="col-xs-4 controls">
+                            <input id="password" class="focused" name="password" type="password" value="" size="50">
+                            <br />
+                            <br />
+                            <a href="/n/forgot_password">Forgot your password?</a><br/>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-xs-1 control-label" for="remember"></label>
+                        <div style="margin-left:20px;" class="col-xs-4 controls">
+                            <input id="remember" name="remember" type="checkbox" value="y"> <b>Remember me</b><br>
+                            <input id="import_collections" name="import_collections" type="checkbox" value="y"> <b>Import existing collections</b>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-xs-1 control-label" for="submit"></label>
+                        <div style="margin-left:20px;" class="col-xs-4 controls">
+                            <input id="next" name="next" type="hidden" value="">
+                            <input class="btn btn-primary" id="submit" name="submit" type="submit" value="Sign in">
+                        </div>
+                    </div>
+              </fieldset>
+
+              <div class="security_box">
+
+                    <h4>Don't have an account?</h4>
+
+                {% if redis_is_available: %}
+                <a href="/n/register" class="btn btn-primary modalize">Create a new account</a>
+                {% else %}
+                <div class="alert alert-warning">
+                  <p>You cannot create an account at this moment.<br />
+                Please try again later.</p>
+                </div>
+                {% endif %}
+
+                <hr />
+                <h4>Login with external services</h4>
+
+                {% if external_login: %}
+                <div>
+                  {% if external_login["github"]: %}
+                  <a href="{{external_login['github']}}" title="Login with GitHub" class="btn btn-info btn-group">Login with Github</a>
+                      {% else %}
+                      <p>Github login is not available right now</p>
+                  {% endif %}
+
+                  {% if external_login["orcid"]: %}
+                  <a href="{{external_login['orcid']}}" title="Login with ORCID" class="btn btn-info btn-group">Login with ORCID</a>
+                      {% else %}
+                      <p>ORCID login is not available right now</p>
+                  {% endif %}
+                </div>
+                {% else: %}
+                <div class="alert alert-warning">
+                  <p>Sorry, you cannot login with Github or ORCID at this time.</p>
+                </div>
+                {% endif %}
+
+            </form>
+        {% else: %}
+	    <div class="alert alert-warning">
+	      <p>You cannot login at this moment using your GeneNetwork account (the authentication service is down).<br />
+		Please try again later.</p>
+        </div>
+	    {% endif %}
+            {% if not external_login: %}
+            <hr>
+	        <div class="alert alert-warning">
+               Note: it is safe to use GeneNetwork without a login. Login is only required for keeping track of
+            collections and getting access to some types of restricted data.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+  {% endblock %}
+
+{% block css %}
+<style type="text/css">
+input.error{
+    border:1px solid #FF0000 !important;
+}
+
+label.error,div.error{
+    font-weight:normal;
+    color:#FF0000 !important;
+}
+</style>
+{% endblock %}
+
+{% block js %}
+
+{% endblock %}

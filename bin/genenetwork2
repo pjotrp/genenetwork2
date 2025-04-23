@@ -25,15 +25,15 @@
 # webserver) run from the base-dir with settings file and add that
 # script with a -c switch, e.g.
 #
-#   env GN2_PROFILE=/usr/local/guix-profiles/gn-latest-20190905 TMPDIR=/export/local/home/zas1024/gn2-zach/tmp WEBSERVER_MODE=DEBUG LOG_LEVEL=DEBUG SERVER_PORT=5002 GENENETWORK_FILES=/export/local/home/zas1024/gn2-zach/genotype_files SQL_URI=mysql://webqtlout:webqtlout@lily.uthsc.edu/db_webqtl ./bin/genenetwork2 ./etc/default_settings.py -c ./maintenance/gen_select_dataset.py
+#   env GN2_PROFILE=/usr/local/guix-profiles/gn-latest-20190905 TMPDIR=/export/local/home/zas1024/gn2-zach/tmp WEBSERVER_MODE=DEBUG LOG_LEVEL=DEBUG SERVER_PORT=5002 GENENETWORK_FILES=/export/local/home/zas1024/gn2-zach/genotype_files SQL_URI=mysql://webqtlout:webqtlout@lily.uthsc.edu/db_webqtl ./bin/genenetwork2 ./gn2/default_settings.py -c ./maintenance/gen_select_dataset.py
 #
 # To run any script in the environment
 #
-#   env GN2_PROFILE=~/opt/gn-latest ./bin/genenetwork2 ./etc/default_settings.py -cli echo "HELLO WORLD"
+#   env GN2_PROFILE=~/opt/gn-latest ./bin/genenetwork2 ./gn2/default_settings.py -cli echo "HELLO WORLD"
 #
 # To get a python REPL(!)
 #
-#   env GN2_PROFILE=~/opt/gn-latest ./bin/genenetwork2 ./etc/default_settings.py -cli python
+#   env GN2_PROFILE=~/opt/gn-latest ./bin/genenetwork2 ./gn2/default_settings.py -cli python
 #
 # For development you may want to run
 #
@@ -42,15 +42,15 @@
 # For staging and production we use gunicorn. Run with something like
 # (note you have to provide the server port). Provide a settings file!
 #
-#   env GN2_PROFILE=~/opt/gn-latest-guix SERVER_PORT=5003 ./bin/genenetwork2 ./etc/default_settings.py -gunicorn-prod
+#   env GN2_PROFILE=~/opt/gn-latest-guix SERVER_PORT=5003 ./bin/genenetwork2 ./gn2/default_settings.py -gunicorn-prod
 #
 # For development use
 #
-#   env GN2_PROFILE=~/opt/gn-latest-guix SERVER_PORT=5003 ./bin/genenetwork2 ./etc/default_settings.py -gunicorn-dev
+#   env GN2_PROFILE=~/opt/gn-latest-guix SERVER_PORT=5003 ./bin/genenetwork2 ./gn2/default_settings.py -gunicorn-dev
 #
 # For extra flexibility you can also provide gunicorn parameters yourself with something like
 #
-#   env GN2_PROFILE=~/opt/gn-latest-guix ./bin/genenetwork2 ./etc/default_settings.py -gunicorn "--bind 0.0.0.0:5003 --workers=1 wsgi"
+#   env GN2_PROFILE=~/opt/gn-latest-guix ./bin/genenetwork2 ./gn2/default_settings.py -gunicorn "--bind 0.0.0.0:5003 --workers=1 wsgi"
 
 SCRIPT=$(realpath "$0")
 echo SCRIPT="${SCRIPT}"
@@ -64,16 +64,11 @@ GUIX_SITE=$GN2_BASE_DIR/lib/python3.8/site-packages
 if [ -d "${GUIX_SITE}" ]; then
     echo INFO: GN2 is running from GNU Guix
     GN2_BASE_DIR=$GUIX_SITE
-    GN_VERSION="${GN2_ID}:$(cat "${GN2_BASE_DIR}"/etc/VERSION)"
-    export GN_VERSION
 else
     echo INFO: GN2 is running from a source tree
     GIT_HASH=$(git rev-parse HEAD)
     GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    GN_VERSION="${GN2_ID}:$(cat "${GN2_BASE_DIR}"/etc/VERSION)-${GIT_BRANCH}-$(echo "${GIT_HASH}" | cut -c1-9)"
-    export GN_VERSION
 fi
-echo GN_VERSION="${GN_VERSION}"
 
 if [ "$1" = "-c" -o "$1" = "-gunicorn" ]; then
     echo "Can not use $1 switch without default settings file"
@@ -82,7 +77,7 @@ fi
 
 settings=$1
 if [ -z "${settings}" ]; then
-    settings=$GN2_BASE_DIR/etc/default_settings.py
+    settings=$GN2_BASE_DIR/gn2/default_settings.py
 else
     shift
 fi
@@ -100,8 +95,10 @@ if [ ! -e "${settings}" ]; then
     exit 1
 fi
 
-export GN2_SETTINGS=$settings     # Python
+# If $GN2_SETTINGS is set, use that, otherwise use default provided at invocation
+export GN2_SETTINGS=${GN2_SETTINGS:-$settings}
 echo GN2_SETTINGS="${settings}"
+echo REQUESTS_CA_BUNDLE="${REQUESTS_CA_BUNDLE}"
 
 if [ -z "${GN2_PROFILE}" ] ; then
     echo "WARNING: GN2_PROFILE has not been set - you need the environment, so I hope you know what you are doing!"
@@ -117,14 +114,16 @@ if [ -z "${GN2_PROFILE}" ]; then
     read -p "PRESS [ENTER] TO CONTINUE..."
 else
     export PATH=$GN2_PROFILE/bin:$PATH
-    export PYTHONPATH="$GN2_PROFILE/lib/python3.9/site-packages" # never inject another PYTHONPATH!!
+    export PYTHONPATH="$GN2_PROFILE/lib/python3.10/site-packages" # never inject another PYTHONPATH!!
     export R_LIBS_SITE=$GN2_PROFILE/site-library
     export JS_GUIX_PATH=$GN2_PROFILE/share/genenetwork2/javascript
     export GUIX_GTK3_PATH="$GN2_PROFILE/lib/gtk-3.0"
     export GI_TYPELIB_PATH="$GN2_PROFILE/lib/girepository-1.0"
     export XDG_DATA_DIRS="$GN2_PROFILE/share"
     export GIO_EXTRA_MODULES="$GN2_PROFILE/lib/gio/modules"
-    export LC_ALL=C # FIXME
+    if [ -z "$LC_ALL" ]; then
+	export LC_ALL=C # FIXME
+    fi
     export GUIX_GENENETWORK_FILES="$GN2_PROFILE/share/genenetwork2"
     export PLINK_COMMAND="$GN2_PROFILE/bin/plink2"
     export GEMMA_COMMAND="$GN2_PROFILE/bin/gemma"
@@ -164,18 +163,15 @@ set|grep TMPDIR
 
 # Now handle command parameter -c which runs python
 if [ "$1" = '-c' ] ; then
-    cd "${GN2_BASE_DIR}/wqflask"
-    cmd=${2#wqflask/}
     echo PYTHONPATH="${PYTHONPATH}"
-    shift ; shift
-    echo "RUNNING COMMAND ${cmd} ${*}"
-    python $cmd $*
+    shift
+    echo "RUNNING COMMAND python ${*}"
+    python $*
     exit $?
 fi
 
 # Now handle command parameter -cli which runs in bash
 if [ "$1" = "-cli" ] ; then
-    cd "${GN2_BASE_DIR}/wqflask"
     cmd=$2
     echo PYTHONPATH="${PYTHONPATH}"
     shift ; shift
@@ -184,7 +180,6 @@ if [ "$1" = "-cli" ] ; then
     exit $?
 fi
 if [ "$1" = '-gunicorn' ] ; then
-    cd "${GN2_BASE_DIR}/wqflask"
     cmd=$2
     echo PYTHONPATH="${PYTHONPATH}"
     echo "RUNNING gunicorn ${cmd}"
@@ -192,20 +187,18 @@ if [ "$1" = '-gunicorn' ] ; then
     exit $?
 fi
 if [ "$1" = '-gunicorn-dev' ] ; then
-    cd "${GN2_BASE_DIR}/wqflask"
     echo PYTHONPATH="${PYTHONPATH}"
     if [ -z "${SERVER_PORT}" ]; then echo "ERROR: Provide a SERVER_PORT" ; exit 1 ; fi
-    cmd="--bind 0.0.0.0:$SERVER_PORT --workers=1 --timeout 180 --reload run_gunicorn:app"
+    cmd="--bind 0.0.0.0:$SERVER_PORT --workers=3 --timeout 180 --reload ${GUNICORN_EXTRA_ARGS} gn2.run_gunicorn:app"
     echo "RUNNING gunicorn ${cmd}"
     gunicorn $cmd
     exit $?
 fi
 if [ "$1" = '-gunicorn-prod' ] ; then
-    cd "${GN2_BASE_DIR}/wqflask"
     echo PYTHONPATH="${PYTHONPATH}"
     if [ -z "${SERVER_PORT}" ]; then echo "ERROR: Provide a SERVER_PORT" ; exit 1 ; fi
     PID=$TMPDIR/gunicorn.$USER.pid
-    cmd="--bind 0.0.0.0:$SERVER_PORT --pid $PID --workers 20 --keep-alive 6000 --max-requests 100 --max-requests-jitter 30 --timeout 1200 wsgi"
+    cmd="--bind 0.0.0.0:$SERVER_PORT --pid $PID --workers 20 --keep-alive 6000 --max-requests 100 --max-requests-jitter 30 --timeout 1200 ${GUNICORN_EXTRA_ARGS} gn2.wsgi"
     echo "RUNNING gunicorn ${cmd}"
     gunicorn $cmd
     exit $?
@@ -224,16 +217,14 @@ fi
 
 
 if [ "$1" = "--with-pdb" ] ; then
-    cd "${GN2_BASE_DIR}/wqflask"
     cmd=$2
     echo PYTHONPATH="${PYTHONPATH}"
     shift ; shift
-    echo "RUNNING COMMAND python3 -m runserver.py"
+    echo "RUNNING COMMAND python3 -m gn2.runserver.py"
     python3 -m pdb runserver.py
     exit $?
 fi
 
 # Start the flask server running GN2
-cd "${GN2_BASE_DIR}/wqflask"
 echo "Starting with $settings"
-python runserver.py
+python -m gn2.runserver

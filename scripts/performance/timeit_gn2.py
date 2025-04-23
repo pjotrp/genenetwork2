@@ -14,7 +14,7 @@ class UserSessionSimulator():
 
 
 def dump_sample_data(dataset_name, trait_id):
-    with database_connection() as conn, conn.cursor() as cursor:
+    with database_connection(get_setting("SQL_URI")) as conn, conn.cursor() as cursor:
         sample_data = {"headers": ["Name", "Value", "SE"], "data": []}
 
         with app.app_context():
@@ -45,9 +45,10 @@ print(dump_sample_data("HLCPublish", "10001"))
     setup="""
 # Required Evils!
 from flask import g
+from gn_libs.mysqldb import database_connection
 from wqflask import app
 
-from wqflask.database import database_connection
+from utility.tools import get_setting
 from wqflask.show_trait import show_trait
 """,
     number=int(sys.argv[1])

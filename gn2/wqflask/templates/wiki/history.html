@@ -1,0 +1,63 @@
+{% extends "index_page.html" %}
+{% block content %}
+    {{ flash_me() }}
+    <div class = "container container-fluid">
+        <div class="row">
+            <div class="col-sm-9">
+                <h2 class="text-info">GeneWiki Entry History</h2>
+                {% for entry in entries %}
+                    <h3 class="text-info">
+                        {% if loop.index0 == 0 %}
+                            <strong>Most Recent Version:</strong>
+                        {% elif loop.index0 == 1 %}
+                            <strong>Previous Version:</strong>
+                        {% endif %}
+                    </h3>
+                    <table class="table table-responsive table-bordered">
+                        <tbody>
+                            <tr>
+                                <th>Gene Symbol:</th>
+                                <td>{{ entry.symbol }}</td>
+                            </tr>
+			    {% if entry.species %}
+			    <tr>
+				<th>Species</th>
+				<td> {{ entry.species }}</td>
+			    </tr>
+			    {% endif %}
+                            <tr>
+                                <th>PubMed IDs:</th>
+                                <td>
+                                    {% for id in entry.pubmed_ids %}
+                                        <a href="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids={{ id }}&dopt=Abstract">{{ id }}</a>&nbsp;
+                                    {% endfor %}
+                                    {% if not entry.pubmed_ids %}Not Available{% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Web URL:</th>
+                                <td>{{ entry.web_url or "Not Available" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Entry:</th>
+                                <td>{{ entry.comment }}</td>
+                            </tr>
+                            <tr>
+                                <th>Category:</th>
+                                <td>{{ '; '.join(entry.categories) or "Not Available" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Add Time:</th>
+                                <td>{{ entry.created }}</td>
+                            </tr>
+                            <tr>
+                                <th>Reason for Modification:</th>
+                                <td>{{ entry.reason or "Not Available" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

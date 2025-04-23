@@ -1,0 +1,72 @@
+{% extends "index_page.html" %}
+
+{% block css %}
+<style type="text/css">
+ .page-header {
+     padding: 1em;
+ }
+</style>
+{% endblock %}
+
+{% block title %}Genotype: {{ name }}{% endblock %}
+
+{% block content %}
+
+<h2 class="page-header">
+    Genotype: {{ metadata.name or name }}
+    <small>
+	{% if name and metadata.dataset %}
+	<sup>
+	    <a href={{ url_for('show_trait_page', dataset=metadata.dataset, trait_id=name) }} target="blank">[compare]</a>
+	</sup>
+	{% endif %}
+    </small>
+</h2>
+
+<div class="container">
+    <table class="table">
+	{% if metadata.dataset and metadata.dataset.group and metadata.species %}
+	<tr>
+	    <td><b>Group</b></td>
+            <td>{{ metadata.dataset.group }}: {{ metadata.species.speciesName }}</td>
+	</tr>
+	{% elif metadata.species %}
+	<tr>
+            <td><b>Species</b></td>
+            <td>{{ metadata.species.speciesName }}</td>
+	</tr>
+	{% endif %}
+
+	{% if metadata.chr and metadata.mb %}
+	<tr>
+            <td><b>Location</b></td>
+            <td>Chr {{ metadata.chr }} @ {{ metadata.mb }} mb </td>
+        </tr>
+	{% endif %}
+	{% if metadata.dataset %}
+        <tr>
+            <td><b>Database </b></td>
+            <td>
+		<a href={{ url_for("get_dataset", name= metadata.dataset.name) }} target="_blank">
+		    {{ metadata.dataset.prefLabel }}
+		</a>
+	    </td>
+        </tr>
+	{% endif %}
+        {% if metadata.sequence %}
+        <tr>
+	    <td><b>Sequence</b></td>
+	    <td style="inline-size: fit-content; writing-mode: horizontal-tb; overflow-wrap: break-word; max-width: 70vw;">{{ metadata.sequence }}</td>
+        </tr>
+        {% endif %}
+
+        {% if metadata.source %}
+        <tr>
+            <td><b>Source</b></td>
+            <td>{{ metadata.source}}</td>
+        </tr>
+        {% endif %}
+    </table>
+</div>
+
+{% endblock %}

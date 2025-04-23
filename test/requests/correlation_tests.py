@@ -3,10 +3,12 @@ import sys
 import html
 import json
 import requests
+import traceback
 from lxml import etree
 from pathlib import Path
 from lxml.html import parse
 from functools import reduce
+from urllib.parse import urljoin
 from link_checker import check_page
 
 def corrs_base_data():
@@ -44,19 +46,30 @@ def do_request(url, data):
             "location_type": "gene",
             **data,
         })
+    if response.headers["Content-Type"] == "application/json":
+        response = requests.get(urljoin(url, response.json()["redirect_url"]))
+
     while response.text.find('<meta http-equiv="refresh" content="5">') >= 0:
         response = requests.get(response.url)
         pass
     return response
 
+def set_location_type(data):
+    return {
+        **data,
+        "location_type": (
+            "highest_lod" if data["corr_dataset"].endswith("Publish")
+            else "gene"
+        )
+    }
+
 def check_sample_correlations(baseurl, base_data):
-    data = {
+    data = set_location_type({
         **base_data,
         "corr_type": "sample",
         "corr_sample_method": "pearson",
-        "location_type": "gene",
         "corr_return_results": "200"
-    }
+    })
     top_n_message = "The top 200 correlations ranked by the Genetic Correlation"
     result = do_request(f"{baseurl}/corr_compute", data)
     assert result.status_code == 200
@@ -122,7 +135,7 @@ def check_correlations(args_obj, parser):
                 corr_type_fn(host, corr_base)
                 print(" ok")
             except AssertionError as asserterr:
-                print (f" fail: {asserterr.args[0]}")
+                print (f" fail: {traceback.format_exc()}")
                 failure = True
 
     if failure:

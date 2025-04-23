@@ -1,0 +1,483 @@
+{% extends "index_page.html" %}
+{% block title %}View Collection{% endblock %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('css', filename='DataTables/css/jquery.dataTables.css') }}" />
+    <link rel="stylesheet" type="text/css" href="{{ url_for('js', filename='DataTablesExtensions/buttonStyles/css/buttons.dataTables.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('css', filename='jquery-ui/jquery-ui.theme.css') }}"/>
+    <link rel="stylesheet" type="text/css" href="/static/new/css/show_trait.css" />
+    <link rel="stylesheet" type="text/css" href="/static/new/css/trait_list.css" />
+{% endblock %}
+{% block content %}
+<!-- Start of body -->
+
+    <div class="container">
+      {{flash_me()}}
+        <h1>
+            <span id="collection_name">{{ uc.name }}</span>
+            <form id="frm-change-collection-name"
+		  method="POST"
+		  action="{{url_for('change_collection_name')}}"
+		  style="display:inline;">
+	      <input type="hidden" name="collection_id" value="{{uc.id}}" />
+	      <input type="text"
+		     name="new_collection_name"
+		     style="font-size: 20px; display: none; width: 500px;"
+		     class="form-control"
+		     placeholder="{{ uc.name }}" />
+	    </form>
+            <button class="btn btn-default" style="display: inline;" id="change_collection_name">Change Collection Name</button>
+            <button class="btn btn-default" style="display: inline;" id="make_default">Make Default</button>
+        </h1>
+        <h3>This collection has {{ '{}'.format(numify(trait_obs|count, "record", "records")) }}</h3>
+
+        <div class="tool-button-container">
+          <form id="collection_form" action="/loading" method="post">
+            <input type="hidden" name="uc_id" id="uc_id" value="{{ uc.id }}" />
+            <input type="hidden" name="collection_name" id="collection_name" value="{{ uc.name }}" />
+            <input type="hidden" name="tool_used" value="" />
+            <input type="hidden" name="form_url" value="" />
+            <input type="hidden" name="trait_list" id="trait_list" value= "
+            {% for this_trait in trait_obs %}
+                {{ this_trait.name }}:{{ this_trait.dataset.name }}:{{ data_hmac('{}:{}'.format(this_trait.name, this_trait.dataset.name)) }},
+            {% endfor %}" >
+
+            {% include 'tool_buttons.html' %}
+
+          </form>
+        </div>
+        <div style="display: flex;">
+            <form id="heatmaps_form">
+                <button id="clustered-heatmap"
+                    class="btn btn-primary"
+                    data-url="{{heatmap_data_url}}"
+                    title="Generate heatmap from this collection" style="margin-top: 10px; margin-bottom: 10px;">
+                        Generate Heatmap
+                </button>
+                <br>
+                <div id="heatmap-options" style="display: none;">
+                    <div style="margin-bottom: 10px;">
+                        <b>Heatmap Orientation: </b>
+                        <br>
+                        Vertical
+                        <input id="heatmap-orient-vertical"
+                                type="radio"
+                                name="vertical"
+                                value="true" checked="checked"/>
+                        Horizontal
+                        <input id="heatmap-orient-horizontal"
+                                type="radio"
+                                name="vertical"
+                                value="false" />
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <button id="clear-heatmap"
+                            class="btn btn-danger"
+                            title="Clear Heatmap">
+                            Clear Heatmap
+                        </button>
+                    </div>
+                </div>
+            </form>
+            &nbsp;
+        </div>
+
+        <div>
+            <div id="clustered-heatmap-image-area"></div>
+            <br />
+            <div class="collection-table-options">
+                <form id="export_form" method="POST" action="/export_traits_csv">
+                    <button class="btn btn-default" id="select_all" type="button"><span class="glyphicon glyphicon-ok"></span> Select All</button>
+                    <button class="btn btn-default" id="invert" type="button"><span class="glyphicon glyphicon-ok"></span> Invert</button>
+                    <button class="btn btn-success" id="add" type="button" disabled><i class="icon-plus-sign"></i> Copy</button>
+                    <input type="hidden" name="database_name" id="database_name" value="None">
+                    <input type="hidden" name="export_data" id="export_data" value="">
+                    <input type="hidden" name="file_name" id="file_name" value="collection_table">
+                    <input type="hidden" name="collection_name_export" value="{{ uc.name }}">
+                    <input type="hidden" name="user_email_export" value="{% if g.user_session.user_email %}{{ g.user_session.user_email }}{% else %}N/A{% endif %}">
+                    <button class="btn btn-default" id="export_traits">Download</button>
+                    <button class="btn btn-default" id="export_collection">Export Collection</button>
+                    <input type="text" id="searchbox" class="form-control" style="width: 200px; display: inline; padding-bottom: 9px;" placeholder="Search Table For ...">
+                    <input type="text" id="select_top" class="form-control" style="width: 200px; display: inline; padding-bottom: 9px;" placeholder="Select Top ...">
+                    <button class="btn btn-default" id="deselect_all" type="button"><span class="glyphicon glyphicon-remove"></span> Deselect</button>
+                    <button id="remove" class="btn btn-danger" data-url="/collections/remove" type="button" disabled><i class="icon-minus-sign"></i> Remove</button>
+                </form>
+            </div>
+            <div style="margin-top: 10px; margin-bottom: 5px;" class="show-hide-container">
+                <b>Show/Hide Columns:&nbsp;&nbsp;</b>
+                <button class="toggle-vis" data-column="1">Index</button>
+                <button class="toggle-vis" data-column="2">Dataset</button>
+                <button class="toggle-vis" data-column="3">Record</button>
+                <button class="toggle-vis" data-column="4">Symbol</button>
+                <button class="toggle-vis" data-column="5">Description</button>
+                <button class="toggle-vis" data-column="6">Location</button>
+                <button class="toggle-vis" data-column="7">Mean</button>
+                <button class="toggle-vis" data-column="8">Peak -logP</button>
+                <button class="toggle-vis" data-column="9">Peak Location</button>
+                <button class="toggle-vis" data-column="10">Effect Size</button>
+            </div>
+            <div id="trait_table_container" style="width: 2000px; min-width: 1500px;">
+                <table class="table-hover table-striped cell-border" id='trait_table' style="float: left;">
+                    <tbody>
+                        <td colspan="100%" align="center"><br><b><font size="15">Loading...</font></b><br></td>
+                    </tbody>
+                </table>
+            </div>
+            <br />
+        </div>
+    </div>
+
+<!-- End of body -->
+
+{% endblock %}
+
+{% block js %}
+    <script language="javascript" type="text/javascript" src="{{ url_for('js', filename='jszip/jszip.min.js') }}"></script>
+    <script language="javascript" type="text/javascript" src="{{ url_for('js', filename='js_alt/md5.min.js') }}"></script>
+    <script language="javascript" type="text/javascript" src="{{ url_for('js', filename='DataTables/js/jquery.dataTables.min.js') }}"></script>
+    <script language="javascript" type="text/javascript" src="{{ url_for('js', filename='DataTablesExtensions/scroller/js/dataTables.scroller.min.js') }}"></script>
+    <script language="javascript" type="text/javascript" src="{{ url_for('js', filename='DataTablesExtensions/plugins/sorting/natural.js') }}"></script>
+    <script language="javascript" type="text/javascript" src="{{ url_for('js', filename='DataTablesExtensions/buttons/js/dataTables.buttons.min.js') }}"></script>
+    <script language="javascript" type="text/javascript" src="{{ url_for('js', filename='DataTablesExtensions/buttons/js/buttons.colVis.min.js') }}"></script>
+    <script type="text/javascript" src="/static/new/javascript/search_results.js"></script>
+    <script type="text/javascript" src="/static/new/javascript/table_functions.js"></script>
+    <script type="text/javascript" src="/static/new/javascript/create_datatable.js"></script>
+
+    <script type="text/javascript" src="{{ url_for('js', filename='plotly/plotly.min.js') }}"></script>
+
+    <script type="text/javascript"
+	    src="/static/new/javascript/partial_correlations.js"></script>
+    <script type='text/javascript'>
+        var traitsJson = {{ traits_json|safe }};
+    </script>
+    <script language="javascript" type="text/javascript">
+        $(document).ready( function () {
+
+            tableId = "trait_table"
+
+            columnDefs = [
+                {
+                    'data': null,
+                    'width': "5px",
+                    'orderDataType': "dom-checkbox",
+                    'targets': 0,
+                    'render': function(data) {
+                        return '<input type="checkbox" name="searchResult" class="checkbox trait_checkbox" value="' + data.hmac + '" data-trait-info="' + data.trait_info_str + '">'
+                    }
+                },
+                {
+                    'title': "Index",
+                    'type': "natural",
+                    'width': "35px",
+                    'searchable': false,
+                    'orderable': false,
+                    'targets': 1,
+                    'render': function(data, type, row, meta) {
+                        return meta.row
+                    }
+                },
+                {
+                    'title': "Dataset",
+                    'type': "natural",
+                    'targets': 2,
+                    'data': "dataset"
+                },
+                {
+                    'title': "Record",
+                    'type': "natural-minus-na",
+                    'width': "120px",
+                    'targets': 3,
+                    'data': null,
+                    'render': function(data) {
+                        return '<a target="_blank" href="/show_trait?trait_id=' + data.name + '&dataset=' + data.dataset + '">' + data.display_name + '</a>'
+                    }
+                },
+                {
+                    'title': "Symbol",
+                    'type': "natural",
+                    'targets': 4,
+                    'data': null,
+                    'render': function(data) {
+                        if (Object.hasOwn(data, 'symbol')){
+                            return data.symbol
+                        } else if (Object.hasOwn(data, 'name')){
+                            return data.name
+                        } else {
+                            return "N/A"
+                        }
+                    }
+                },
+                {
+                    'title': "Description",
+                    'type': "natural",
+                    'targets': 5,
+                    'data': null,
+                    'render': function(data) {
+                        if (Object.hasOwn(data, 'description')){
+                            try {
+                                return decodeURIComponent(data.description)
+                            } catch(err){
+                                return data.description
+                            }
+                        } else if (Object.hasOwn(data, 'location')){
+                            return data.location
+                        } else if (Object.hasOwn(data, 'name')){
+                            return data.name
+                        } else {
+                            return "N/A"
+                        }
+                    }
+                },
+                {
+                    'title': "<div style='text-align: right;'>Location</div>",
+                    'type': "natural-minus-na",
+                    'width': "125px",
+                    'targets': 6,
+                    'data': null,
+                    'render': function(data) {
+                        if (Object.hasOwn(data, 'location')){
+                            return data.location
+                        } else {
+                            return "N/A"
+                        }
+                    }
+                },
+                {
+                    'title': "<div style='text-align: right;'>Mean</div>",
+                    'type': "natural-minus-na",
+                    'width': "60px",
+                    'data': null,
+                    'targets': 7,
+                    'orderSequence': [ "desc", "asc"],
+                    'render': function(data) {
+                        if (Object.hasOwn(data, 'mean')){
+                            if (data.mean != 'N/A'){
+                                return data.mean.toFixed(3)
+                            } else {
+                                return "N/A"
+                            }
+                        } else {
+                            return "N/A"
+                        }
+                    }
+                },
+                {
+                    'title': "<div style='text-align: right; padding-right: 10px;'>Peak</div> <div style='text-align: right;'>-logP <a href=\"{{ url_for('gn_docs_blueprint.glossary') }}#LRS\" target=\"_blank\" style=\"color: white;\"><sup style='color: #FF0000;'><i>?</i></sup></a></div>",
+                    'type': "natural-minus-na",
+                    'data': null,
+                    'width': "60px",
+                    'targets': 8,
+                    'orderSequence': [ "desc", "asc"],
+                    'render': function(data) {
+                        if (Object.hasOwn(data, 'lrs_score')){
+                            return (data.lrs_score / 4.61).toFixed(3)
+                        } else {
+                            return "N/A"
+                        }
+                    }
+                },
+                {
+                    'title': "<div style='text-align: right;'>Peak Location</div>",
+                    'type': "natural-minus-na",
+                    'data': null,
+                    'width': "125px",
+                    'targets': 9,
+                    'render': function(data) {
+                        if (Object.hasOwn(data, 'lrs_location')){
+                            return data.lrs_location
+                        } else {
+                            return "N/A"
+                        }
+                    }
+                },
+                {
+                    'title': "<div style='text-align: right; padding-right: 10px;'>Effect</div> <div style='text-align: right;'>Size <a href=\"{{ url_for('gn_docs_blueprint.glossary') }}#A\" target=\"_blank\" style=\"color: white;\"><sup style='color: #FF0000;'><i>?</i></sup></a></div>",
+                    'type': "natural-minus-na",
+                    'data': null,
+                    'width': "85px",
+                    'targets': 10,
+                    'orderSequence': [ "desc", "asc"],
+                    'render': function(data) {
+                        if (Object.hasOwn(data, 'additive')){
+                            if (data.additive != "") {
+                                return data.additive.toFixed(3)
+                            } else {
+                                return "N/A"
+                            }
+                        } else {
+                            return "N/A"
+                        }
+                    }
+                }
+            ]
+
+            tableSettings = {
+                "createdRow": function ( row, data, index ) {
+                    $('td', row).eq(0).attr("style", "text-align: center; padding: 0px 10px 2px 10px;");
+                    $('td', row).eq(1).attr("align", "right");
+                    $('td', row).eq(1).attr('data-export', index+1);
+                    $('td', row).eq(2).attr('data-export', $('td', row).eq(2).text());
+                    $('td', row).eq(3).attr('title', $('td', row).eq(3).text());
+                    $('td', row).eq(3).attr('data-export', $('td', row).eq(3).text());
+                    $('td', row).eq(4).attr('title', $('td', row).eq(4).text());
+                    $('td', row).eq(4).attr('data-export', $('td', row).eq(4).text());
+                    $('td', row).eq(5).attr('data-export', $('td', row).eq(5).text());
+                    if ($('td', row).eq(5).text().length > 500) {
+                        $('td', row).eq(5).text($('td', row).eq(5).text().substring(0, 500));
+                        $('td', row).eq(5).text($('td', row).eq(5).text() + '...')
+                    }
+                    $('td', row).slice(6,11).attr("align", "right");
+                    $('td', row).eq(6).attr('data-export', $('td', row).eq(6).text());
+                    $('td', row).eq(7).attr('data-export', $('td', row).eq(7).text());
+                    $('td', row).eq(8).attr('data-export', $('td', row).eq(8).text());
+                    $('td', row).eq(9).attr('data-export', $('td', row).eq(9).text());
+                    $('td', row).eq(10).attr('data-export', $('td', row).eq(9).text());
+                },
+                "order": [[1, "asc" ]],
+                {% if traits_json|length > 20 %}
+                "scroller": true
+                {% else %}
+                "scroller": false
+                {% endif %}
+            }
+
+            create_table(tableId, traitsJson, columnDefs, tableSettings)
+
+            submit_special = function(url) {
+                $("#collection_form").attr("action", url);
+                $("#collection_form").attr('target', '_blank').submit();
+                return false;
+            };
+
+            $("#delete").on("click", function() {
+                url = $(this).data("url")
+                $("#collection_form").attr("action", url);
+                return $("#collection_form").removeAttr('target').submit();
+            });
+
+            $("#remove").on("click", function() {
+                url = $(this).data("url")
+                traits = $("#trait_table input:checked").map(function() {
+                    return $(this).val();
+                }).get();
+                $("#trait_list").val(traits)
+                $("#collection_form").attr("action", url);
+                return $("#collection_form").removeAttr('target').submit();
+            });
+
+            $("#change_collection_name").on("click", function() {
+                if ($('input[name=new_collection_name]').css('display') == 'none') {
+                    $('input[name=new_collection_name]').css('display', 'inline');
+                    $('#collection_name').css('display', 'none');
+                } else {
+		    new_name = $('input[name=new_collection_name]').val();
+		    $('#frm-change-collection-name').submit();
+		    console.debug("We really should not get here, but, whatever...");
+                    $('input[name=new_collection_name]').css('display', 'none');
+                    $('input[name=collection_name]').val(new_name);
+                    $('#collection_name').text(new_name)
+                    $('#collection_name').css('display', 'inline');
+                }
+            });
+
+            make_default = function() {
+                alert("The current collection is now your default collection.")
+                let uc_id = $('#uc_id').val();
+                $.cookie('default_collection', uc_id, {
+                    expires: 365,
+                    path: '/'
+                });
+
+                let default_collection_id = $.cookie('default_collection');
+            };
+
+            $("#make_default").on("click", function(){
+                make_default();
+            });
+
+	    $("#heatmaps_form").submit(function(e) {
+		e.preventDefault();
+	    });
+
+	    function clear_heatmap_area() {
+		area = document.getElementById("clustered-heatmap-image-area");
+		area.querySelectorAll("*").forEach(function(child) {
+		    child.remove();
+		});
+	    }
+
+	    function generate_progress_indicator() {
+		count = 0;
+		default_message = "Computing"
+		return function() {
+		    message = default_message;
+		    if(count >= 10) {
+			count = 0;
+		    }
+		    for(i = 0; i < count; i++) {
+			message = message + " .";
+		    }
+		    clear_heatmap_area();
+		    $("#clustered-heatmap-image-area").append(
+			'<div class="alert alert-info"' +
+			    ' style="font-weigh: bold; font-size: 150%;">' +
+			    message + '</div>');
+		    count = count + 1;
+		};
+	    }
+
+	    function display_clustered_heatmap(heatmap_data) {
+		clear_heatmap_area();
+		image_area = document.getElementById("clustered-heatmap-image-area")
+		Plotly.newPlot(image_area, heatmap_data)
+	    }
+
+	    function process_clustered_heatmap_error(xhr, status, error) {
+		clear_heatmap_area()
+		$("#clustered-heatmap-image-area").append(
+		    $(
+			'<div class="alert alert-danger">ERROR: ' +
+			    xhr.responseJSON.message +
+			    '</div>'));
+	    }
+
+	    $("#clustered-heatmap").on("click", function() {
+		clear_heatmap_area();
+        $("#heatmap-options").show();
+		intv = window.setInterval(generate_progress_indicator(), 300);
+		vert_element = document.getElementById("heatmap-orient-vertical");
+		vert_true = vert_element == null ? false : vert_element.checked;
+		heatmap_url = $(this).attr("data-url")
+		traits = $(".trait_checkbox:checked").map(function() {
+		    return this.value
+		}).get();
+		$.ajax({
+		    type: "POST",
+		    url: heatmap_url,
+		    contentType: "application/json",
+		    data: JSON.stringify({
+			"traits_names": traits,
+			"vertical": vert_true
+		    }),
+		    dataType: "JSON",
+		    success: function(data, status, xhr) {
+			window.clearInterval(intv);
+			display_clustered_heatmap(data);
+		    },
+		    error: function(xhr, status, error) {
+			window.clearInterval(intv);
+			process_clustered_heatmap_error(xhr, status, error);
+		    }
+		});
+	    });
+
+        $("#clear-heatmap").on("click", function() {
+            clear_heatmap_area();
+            $("#heatmap-options").hide();
+        });
+
+        });
+    </script>
+
+
+{% endblock %}
+

@@ -1,0 +1,136 @@
+{% extends "index_page.html" %}
+
+{% block css %}
+<style type="text/css">
+ .page-header {
+     padding: 1em;
+ }
+</style>
+{% endblock %}
+
+{% block title %}Phenotype: {{ name }}{% endblock %}
+
+{% block content %}
+
+{% set published_p = "http://rdf.ncbi.nlm.nih.gov/pubmed" in metadata.references.id %}
+
+<h1 class="page-header">
+    Phenotype: {{ metadata.traitName }} ({{ metadata.abbreviation }})
+</h1>
+
+<div class="container">
+    <table class="table">
+	<tr>
+            <td><b>Species</b></td>
+            <td>{{ metadata.species or "N/A" }}</td>
+	</tr>
+	<tr>
+            <td><b>Group</b></td>
+            <td>{{ metadata.group or "N/A" }}</td>
+        </tr>
+
+	<tr>
+            <td><b>Phenotype</b></td>
+            <td>{{ metadata.description or "N/A"}}</td>
+	</tr>
+
+        {% if metadata.creator %}
+        <tr>
+            <td><b>Authors</b></td>
+            <td>
+                {% if metadata.creator is iterable %}
+                {{ metadata.creator |join(", ") }}
+                {% for creator in metadata.creator %}
+                {{ creator }}
+                {% endfor %}
+                {% else %}
+                metadata.creator
+                {% endif %}
+                {% endif %}
+            </td>
+        </tr>
+	{% if metadata.references.id %}
+	<tr>
+	    <td>
+		<b>Publication</b>
+		{% if published_p == False %}
+                <sup><small>(unpublished)</small></sup>
+		{% endif %}
+	    </td>
+	    <td>
+		<i>
+		    {% if metadata.references.title %}
+		    {{ metadata.references.title }}.
+		    {% endif %}
+		</i>
+		{% if metadata.references.creator %}
+		{{ ', '.join(metadata.references.creator) }}.
+		{% endif %}
+		{{ metadata.references.year }}
+		{{ metadata.references.month }}
+		{% if metadata.references.volume and metadata.references.page %}
+		{{ metadata.references.volume }}:{{ metadata.references.page }}
+		{% endif %}
+
+		<sup>
+		    <a href="{{ metadata.references.id }}" target="_blank"><small>
+			{% if published_p %}
+			PubMed
+			{% else %}
+			GN RDF Page
+			{% endif %}
+			<sup>&#32;<span class="glyphicon glyphicon-new-window"></span></sup></small></a>
+		</sup>
+	    </td>
+	</tr>
+	{% endif %}
+
+	<tr>
+	    <td><b>Database</b></td>
+	    <td>
+		{% for database in metadata.dataset %}
+		{% set dataset_url = url_for('get_dataset', name=database.identifier)%}
+		<a href="{{ dataset_url }}" target="blank">{{ database.prefLabel }}</a> <br/>
+                {% endfor %}
+	    </td>
+	</tr>
+
+	<tr>
+	    <td><b>Mean</b></td>
+	    <td>{{ metadata.mean or "N/A"}}</td>
+	</tr>
+
+	<tr>
+	    <td><b>Peak -logP</b></td>
+	    <td>{{ metadata.lodScore or "N/A"}}</td>
+	</tr>
+
+	<tr>
+	    <td><b>Effect Size</b></td>
+	    <td>{{ metadata.additive or "N/A"}}</td>
+	</tr>
+	{% if metadata.locus %}
+	<tr>
+	    <td><b>Peak Location</b></td>
+	    <td>Chr{{ metadata.locus.chromosome }}: {{ metadata.locus.mb }}</td>
+	</tr>
+	{% endif %}
+	{% if metadata.references.id %}
+	<tr>
+	    <td><b>Resource Links</b></td>
+	    <td>
+		<a href="{{ metadata.references.id }}" target="_blank">
+		    {% if published_p %}
+		    PubMed
+		    {% else %}
+		    GN RDF Page
+		    {% endif %}
+		</a>
+	    </td>
+	</tr>
+	{% endif %}
+    </table>
+</div>
+
+
+{% endblock %}

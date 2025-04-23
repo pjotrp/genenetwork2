@@ -1,0 +1,62 @@
+{% extends "index_page.html" %}
+
+{% block css %}
+<style type="text/css">
+ .page-header {
+     text-underline-offset: 0.5rem;
+     padding: 1em;
+ }
+
+ .panel-metadata {
+     display: inline-block;
+     width: fit-content;
+     height: fit-content;
+     padding: 0;
+ }
+
+ .panel-metadata dt {
+     color: green;
+ }
+
+ .panel-metadata dt::after {
+     content: ":";
+ }
+
+</style>
+{% endblock %}
+
+{% block title %}Title: {{metadata.title}}{% endblock %}
+
+{% block content %}
+
+<header class="page-header text-justify">
+    <h1>
+	{% if metadata.title %}
+	<u><a href="{{ metadata.id }}">{{ metadata.title}}</a></u>
+        {% else %}
+        {{ name }}
+        {% endif %}
+    </h1>
+</header>
+
+<div class="container">
+    {% if metadata == {} %}
+    <p class="lead">We appreciate your interest, but unfortunately, we don't have any additional information available for: <strong>{{ name }}</strong>. If you have any other questions or need assistance with something else, please feel free to reach out to us.</p>
+    {% else %}
+    <div class="panel-about panel panel-info panel-metadata text-muted{{ float_p }}">
+        <div class="panel-heading"><strong><span class="glyphicon glyphicon-info-sign aria-hidden=true"></span> Details</strong> </div>
+        <div class="panel-body">
+            <dl class="dl-horizontal">
+		<dt>Abstract</dt> <dd>{{ metadata.abstract or "N/A" }}</dd>
+		<dt>Journal</dt> <dd>{{ metadata.journal or "N/A" }}</dd>
+		<dt>Month</dt> <dd>{{ metadata.month or "N/A" }}</dd>
+		<dt>Page</dt> <dd>{{ metadata.pages or "N/A" }}</dd>
+		<dt>Year</dt> <dd>{{ metadata.year or "N/A" }}</dd>
+	    </dl>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

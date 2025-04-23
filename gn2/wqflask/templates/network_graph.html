@@ -1,0 +1,152 @@
+{% extends "index_page.html" %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="/static/new/css/network_graph.css" />
+    <link rel="stylesheet" type="text/css" href="{{ url_for('css', filename='cytoscape-panzoom/cytoscape.js-panzoom.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('css', filename='qtip2/jquery.qtip.min.css') }}">
+    <style>
+        /* The Cytoscape Web container must have its dimensions set. */
+        html, body { height: 100%; width: 100%; padding: 0; margin: 0; }
+        #cytoscapeweb { width: 70%; height: 70%; }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="container-fluid">
+        <h1>Network Graph</h1>
+        <hr style="height: 1px; background-color: #A9A9A9;">
+        <div class="row" >
+          <div id="content">
+            <div id="secondaryContent" class="col-xs-3">
+                <h3 style="margin-top:0px; margin-bottom: 5px;"> Visualization Options</h3>
+                <table border="0">
+                  <tbody>
+                    <tr>
+                      <td>
+                        <button id="reset_graph">Reset Graph</button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        Focus Trait<sup title="Only show edges connected to the specified node" style="color:#f00"> ?</sup>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <select name="focus_select">
+                          <option disabled selected value>Select Trait</option>
+                          {% for trait in traits %}
+                          {% if trait.symbol == None %}
+                          <option value="{{ trait.name }}:{{ trait.dataset.name }}">{{ trait.name }}</option>
+                          {% else %}
+                          <option value="{{ trait.name }}:{{ trait.dataset.name }}">{{ trait.symbol }} ({{ trait.name }})</option>
+                          {% endif %}
+                          {% endfor %}
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan="1">
+                         Correlation Coefficient<sup title="Filter edges to only show correlations less than the negative value specified with the slider and greater than the positive value. For example, moving the slider half way will display correlations less than -0.5 and greater than 0.5" style="color:#f00"> ?</sup>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan="1">
+                        <div style="text-align: center;">
+                          <div style="float: left;"><font size="2"><b>-1</b></font></div>
+                          <font size="2"><b>0</b></font>
+                          <div style="float: right;"><font size="2"><b>1</b></font></div>
+                        </div>
+                        <!--
+                        <font size="2"><b>-1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1</b></font><br>
+                        -->
+                        <input type="range" id="neg_slide" min="-1" max="0" value="0" step="0.001" list="corr_range" style="display: inline; width: 49%">
+                        <input type="range" id="pos_slide" min="0" max="1" value="0" step="0.001" list="corr_range" style="display: inline; width: 49%">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        Layouts:
+                        <select name="layout_select">
+                          <option value="circle">Circle</option>
+                          <option value="concentric">Concentric</option>
+                          <option value="cose">Cose</option>
+                          <option value="grid">Grid</option>
+                          <option value="breadthfirst">Breadthfirst</option>
+                          <option value="random">Random</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        Node Font Size:
+                        <select name="font_size">
+                          <option value="6">6</option>
+                          <option value="7">7</option>
+                          <option value="8">8</option>
+                          <option value="9">9</option>
+                          <option value="10" selected>10</option>
+                          <option value="11">11</option>
+                          <option value="12">12</option>
+                          <option value="13">13</option>
+                          <option value="14">14</option>
+                          <option value="15">15</option>
+                          <option value="16">16</option>
+                          <option value="17">17</option>
+                          <option value="18">18</option>
+                        </select>
+                      </td>
+                      <td>
+                    </tr>
+                    <tr>
+                      <td>
+                        Edge Width:
+                        <select name="edge_width">
+                          <option value="1" selected>1x</option>
+                          <option value="2">2x</option>
+                          <option value="3">3x</option>
+                          <option value="4">4x</option>
+                        </select>
+                      </td>
+                      <td>
+                    </tr>
+                  </tbody>
+                </table>
+                <h3 style="margin-bottom: 5px;"> Download</h3>
+                <table>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <a id="image_link" href="javascript:void(0)">
+                          <button style="width:100px;height:25px;">Save Image</button>
+                        </a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+            </div>
+            <div id="cytoscapeweb" class="col-xs-9" style="height:700px !important; border-style: solid; border-width: 1px; border-color: grey;"></div>
+          </div>
+        </div>
+    </div>
+
+
+{% endblock %}
+
+{% block js %}
+
+    <script>
+        elements_list = {{ elements | safe }}
+        gn2_url       = "{{ gn2_url | safe }}"
+    </script>
+    <script language="javascript" type="text/javascript" src="{{ url_for('js', filename='DataTables/js/jquery.js') }}"></script>
+    <script language="javascript" type="text/javascript" src="{{ url_for('js', filename='qtip2/jquery.qtip.min.js') }}"></script>
+    <script language="javascript" type="text/javascript" src="{{ url_for('js', filename='js_alt/underscore.min.js') }}"></script>
+
+    <script language="javascript" type="text/javascript" src="{{ url_for('js', filename='cytoscape/cytoscape.min.js') }}"></script>
+    <script language="javascript" type="text/javascript" src="{{ url_for('js', filename='cytoscape-panzoom/cytoscape-panzoom.js') }}"></script>
+    <!-- should be using cytoscape-popper for tips, see docs -->
+    <script language="javascript" type="text/javascript" src="{{ url_for('js', filename='cytoscape-qtip/cytoscape-qtip.js') }}"></script>
+    <script language="javascript" type="text/javascript" src="/static/new/javascript/network_graph.js"></script>
+
+{% endblock %}

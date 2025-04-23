@@ -1,0 +1,57 @@
+<section classs="row commit-content"  style="padding-top:25px">
+    <div class="col-sm-10 col-sm-offset-1">
+        <div>
+            <div>
+                <h2>
+                    <i>Save your Changes</i>
+                </h2>
+            </div>
+        </div>
+        <br>
+        <div>
+            <div class="row">
+                <label class="col-sm-8" for="message">
+                    <i>*Describe edit*</i>
+                </label>
+            </div>
+            <br>
+            <div class="row">
+                <textarea style="white-space: normal" rows="12" class="col-sm-12" name="message" required id="commit-message">
+        </textarea>
+            </div>
+        </div>
+        <br>
+        <br>
+        <div class="row">
+            <button id="btn-commit"
+                    class="btn btn-primary col-lg-3 col-lg-offset-1 col-sm-4 col-sm-offset-1">Save</button>
+            <button id="btn-diff"
+                    class="btn col-lg-3 col-lg-offset-1  col-sm-4 col-sm-offset-1">Show Edit Diff</button>
+        </div>
+        <br>
+        <div id="diff_page"></div>
+    </div>
+</section>
+{% block js %}
+<script>
+  htmx.on("#btn-commit", "click", function(event){
+      let msg = htmx.find("#commit-message").value.trim()
+      if (msg != ""){
+          htmx.find("#output").dispatchEvent(
+              new CustomEvent("commitEvent", {
+                  bubbles: true,
+                  detail: {action: 'didInitialize', payload: msg},
+              }),
+          );
+      }
+  })
+  htmx.on("#btn-diff", "click", function(event){
+      htmx.find("#output").dispatchEvent(
+          new CustomEvent("diffEvent", {
+              bubbles: true,
+              detail: {},
+          }),
+      );
+  })
+</script>
+{% endblock %}

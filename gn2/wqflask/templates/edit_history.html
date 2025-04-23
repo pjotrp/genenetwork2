@@ -1,0 +1,56 @@
+{% extends "index_page.html" %}
+{% block title %}Trait Submission{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('css', filename='DataTables/css/jquery.dataTables.css') }}" />
+{% endblock %}
+
+{% block content %}
+<!-- Start of body -->
+<div class="container">
+
+  <h1>History</h1>
+    {% if diff %}
+    <div class="row">
+      <table id="history" class="table-responsive table-hover table-striped cell-border">
+	<thead>
+          <th>Timestamp</th>
+          <th>Editor</th>
+          <th>Field</th>
+          <th>Diff</th>
+	</thead>
+	<tbody>
+	  {%set ns = namespace(display_ts=True)%}
+	  {%for ts, item in diff.items()%}
+	  {%set ns.display_ts = True%}
+	  {%for the_diff in item%}
+	  <tr>
+	    {%if ns.display_ts%}
+	    <td rowspan={{item | length}}>{{ts}}</td>
+	    {%set ns.display_ts = False%}
+	    {%endif%}
+	    <td>{{the_diff.author}}</td>
+	    <td>{{the_diff.diff.field}}</td>
+	    <td><pre>{{the_diff.diff.diff}}</pre></td>
+	  </tr>
+	  {%endfor%}
+	  {%endfor%}
+	</tbody>
+      </table>
+    </div>
+    {% endif %}
+
+</div>
+{%endblock%}
+
+{% block js %}
+<script language="javascript" type="text/javascript" src="{{ url_for('js', filename='DataTables/js/jquery.js') }}"></script>
+<script language="javascript" type="text/javascript" src="{{ url_for('js', filename='DataTables/js/jquery.dataTables.min.js') }}"></script>
+<script language="javascript" type="text/javascript">
+ gn_server_url = "{{ gn_server_url }}";
+
+ $(document).ready( function() {
+     $('#history').dataTable();
+ });
+</script>
+{% endblock %}

@@ -1,0 +1,286 @@
+<title>Loading {{ start_vars.tool_used }} Results</title>
+<link REL="stylesheet" TYPE="text/css" href="{{ url_for('css', filename='bootstrap/css/bootstrap.css') }}" />
+<link REL="stylesheet" TYPE="text/css" href="/static/new/css/bootstrap-custom.css" />
+<link rel="stylesheet" type="text/css" href="{{ url_for('css', filename='xterm/xterm.min.css') }}" />
+
+<style>
+/* Force text wrapping in terminal */
+#terminal {
+  width: 100%;
+  white-space: pre-wrap; /* Wrap long lines */
+  word-break: break-all; /* Break long words */
+  padding: 10px;
+}
+</style>
+
+<form method="post" action="" name="loading_form" id="loading_form" class="form-horizontal">
+{% for key, value in start_vars.items() %}
+<input type="hidden" name="{{ key }}" value="{{ value }}">
+{% endfor %}
+		<div class="container" style="padding: 40px 0;">
+			<div style="display: flex; flex-direction: column; gap: 40px; min-height: 90vh; justify-content: center; align-items: center;">
+			    <div style="max-width: 500px; width: 100%;">
+				{% if start_vars.tool_used == "Mapping" %}
+				<h1>Computing the Maps</h1>
+				<br>
+				<b>Time Elapsed:</b> <span class="timer"></span>
+				<br>			
+				<b>Trait Metadata</b>
+				<br>
+				species = <b><i>{{ start_vars.species[0] | upper }}{{ start_vars.species[1:] }}</i></b>
+				<br>
+				group = <b><i>{{ start_vars.group[0] | upper }}{{ start_vars.group[1:] }}</i></b>
+				<br>
+				trait identifier = <b><i>{{ start_vars.trait_name }}</i></b>
+				<br>
+				n of sample = <b><i>{{ start_vars.n_samples }}</i></b>
+				{% if start_vars.transform != "" %}
+				<br>
+				transformation = <b><i>{{ start_vars.transform }}</i></b>
+				{% endif %}
+				<br>
+				hash of sample values = <b><i>{{ start_vars.vals_hash }}</i></b>
+				<br><br>
+				<b>Mapping Metadata</b>
+				<br>
+				mapping method = <b><i>{% if start_vars.method == "gemma" %}GEMMA {% if start_vars.use_loco == "True" %}using LOCO {% endif %}{% else %}{{ start_vars.method }}{% endif %}</i></b>
+				{% if start_vars.maf != "" and start_vars.method != "reaper" %}
+				<br>
+				minor allele frequency lower limit = <b><i>{{ start_vars.maf }}</i></b>
+				{% endif %}
+				<br>
+				{% if start_vars.covariates != "" and start_vars.method != "reaper" %}
+				{% set covariate_list = start_vars.covariates.split(",") %}
+				cofactors = <b><i>{% for covariate in covariate_list %}{% set this_covariate = covariate.split(":")[0] %}{{ this_covariate }}{% if not loop.last %}, {% endif %}{% endfor %}</i></b>
+				{% else %}
+				cofactors = <b><i>None</i></b>
+				{% endif %}
+				{% if start_vars.control_marker != "" and start_vars.do_control == "true" and start_vars.method != "gemma" %}
+				<br>
+				marker covariate = <b><i>{{ start_vars.control_marker }}</i></b>
+				{% endif %}
+				<br>
+				{% if start_vars.genofile != "" %}
+				{% set genofile_desc = start_vars.genofile.split(":")[1] %}
+				genotype file = <b><i>{{ genofile_desc }}</i></b>
+				{% else %}
+				genotype file = <b><i>{{ start_vars.group[0] | upper }}{{ start_vars.group[1:] }}.geno</i></b>
+				{% endif %}
+				{% if start_vars.num_perm | int > 0 and start_vars.method != "gemma" %}
+				<br>
+				n of permutations = <b><i>{{ start_vars.num_perm }}</i></b>
+				{% endif %}
+				{% if num_bootstrap in start_vars %}
+				{% if start_vars.num_bootstrap | int > 0 and start_vars.method == "reaper" %}
+				<br>
+				n of bootstrap = <b><i>{{ start_vars.num_bootstrap }}</i></b>
+				{% endif %}
+				{% endif %}
+				{% else %}
+				<h1>&nbsp;{{ start_vars.tool_used }}&nbsp;Computation in progress ...</h1>
+				{% endif %}
+				<br><br>
+				<div>
+					<img align="center" src="/static/gif/waitAnima2.gif">
+				</div>
+				</div>
+				<div style="max-width: 500px; width: 100%;">
+					<div class="panel-group" id="accordion" role="tablist" style="width: 400px; margin: 0;">
+					{% if start_vars.method == 'rqtl_geno' or start_vars.method == 'rqtl2_geno' %}
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4 class="panel-title">
+							<a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">
+							<span class="glyphicon glyphicon-menu-right text-info"></span> Display System Log
+							</a>
+							</h4>
+						</div>
+						<div id="collapseTwo" class="panel-collapse collapse">
+							<div class="panel-body" id="streamingContainer">
+								<div id="terminal"> </div>
+							</div>
+						</div>
+					</div>
+					<br>
+					{% endif %}
+					{% if start_vars.vals_diff|length != 0 and start_vars.transform == "" %}
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4 class="panel-title">
+							<a data-toggle="collapse" data-parent="#accordion" href="#collapseThree">
+							<span class="glyphicon glyphicon-menu-right text-info"></span> View Full Diff
+							</a>
+							</h4>
+						</div>
+						<div id="collapseThree" class="panel-collapse collapse">
+							<div id="diff_table_container" class="panel-body" style="height:200px; overflow:auto;">
+								<table class="table table-hover">
+								<thead>
+									<th>Sample</th>
+									<th>New Value</th>
+									<th>Old Value</th>
+								</thead>
+								<tbody>
+									{% for sample in start_vars.vals_diff %}
+									<tr>
+									<td>{{ sample }}</td>
+									<td>{{ start_vars.vals_diff[sample].new_val }}</td>
+									<td>{{ start_vars.vals_diff[sample].old_val }}</td>
+									</tr>
+									{% endfor %}
+								</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+</form>
+
+<script src="{{ url_for('js', filename='jquery/jquery.min.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('js', filename='bootstrap/js/bootstrap.min.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('js', filename='xterm/xterm.min.js') }}" type="text/javascript"></script>
+
+
+<script type="text/javascript">
+ // get the id from start_vars
+ 
+  let RUN_ID = "{{ run_id }}"
+  let RUNNING = false
+ var STREAMING_ENABLED = "{{ streaming_enabled }}"
+ STREAMING_ENABLED = STREAMING_ENABLED == "True" ? true : false
+
+  function writeError(term, message) {
+    // ANSI escape code for red text
+    const red = '\x1b[31m'; // Red text
+    const reset = '\x1b[0m'; // Reset to default color
+
+    term.writeln(`${red}${message}${reset}`);
+  }
+
+  
+  async function fetchUpdate(term, action="STREAM") {
+    let last_pointer = 0;
+    while (RUNNING) {
+        try {
+            const request = new Request(`/streaming?peak=${last_pointer}`, {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                method: "POST",
+                body: JSON.stringify({ "peak": last_pointer, "run_id": RUN_ID }),
+            });
+
+            const response = await fetch(request);            
+            if (!response.ok) {
+                console.error(`Failed to fetch: ${response.statusText}`);
+                break;
+            }
+
+            const data = await response.json();
+            if (data["error"] && data["trace"]) {
+                term.writeln(`Error occurred:`);
+                const lines = data["trace"].split("\n");
+                lines.forEach(line => writeError(term, line.trim()));
+            } else {
+                const pointer = data["pointer"];
+                if (last_pointer !== pointer) {
+                    const lines = data["data"];
+                    lines.forEach(line => term.writeln(line.trim()));
+                    last_pointer = pointer;
+                }
+            }
+        } catch (error) {
+            console.error("Error during fetch operation:", error);
+	    writeError(term, "Network error, retrying ....")
+        }
+    }
+ }
+
+
+  document.addEventListener('DOMContentLoaded', async function() {
+      try {
+        RUNNING = STREAMING_ENABLED;
+
+        // Initialize the terminal
+        let term = new Terminal({
+            cursorBlink: true,
+            lineHeight: 1.1,
+            scrollback: 9999999,
+            macOptionIsMeta: true,
+            cols: 40
+        });
+        term.open(document.getElementById('terminal'));
+
+        // Use await to wait for the fetchUpdate function
+        await fetchUpdate(term, "STREAM");
+
+    } catch (error) {
+        console.error("An error occurred during the fetch operation:", error);
+    }
+ })
+ 
+
+</script>
+<script  type="text/javascript">
+ var start = new Date;
+
+ setInterval(function() {
+     minutes = Math.floor((new Date - start) / 1000 / 60)
+     seconds = Math.round(((new Date - start) / 1000) % 60)
+     if (seconds < 10 && minutes >= 1){
+	 seconds_text = "0" + seconds.toString()
+     } else {
+	 seconds_text = seconds.toString()
+     }
+     if (minutes < 1) {
+	 $('.timer').text(seconds_text + " seconds");
+     } else {
+	 $('.timer').text(minutes.toString() + ":" + seconds_text);
+     }
+ }, 100);
+
+$("#loading_form").attr("action", "{{ start_vars.form_url }}");
+
+$("#loading_form").on('submit', function(e) {
+    e.preventDefault();
+    var form = $(this);
+    $.ajax({
+        url: form.attr('action'),
+        type: 'POST',
+        data: form.serialize(),
+        success: function(data) {
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else if (data.submit_url) {
+                const form = document.createElement("form");
+                form.action = data.submit_url;
+                form.method = data.submit_method.toUpperCase();
+                for(const key in data.data) {
+                    if(data.data.hasOwnProperty(key)) {
+                        const input = document.createElement("input");
+                        input.type = "hidden";
+                        input.name = key;
+                        input.value = data.data[key];
+                        form.appendChild(input)
+                    }
+                }
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+            }
+        },
+        error: function(xhr) {
+            console.error("Error:", xhr.statusText);
+        }
+    });
+});
+
+setTimeout(function() {
+    $("#loading_form").trigger('submit');
+}, 350);
+</script>

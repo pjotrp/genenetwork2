@@ -1,0 +1,58 @@
+{% extends "index_page.html" %}
+{%from "oauth2/profile_nav.html" import profile_nav%}
+{%from "oauth2/display_error.html" import display_error%}
+{%block title%}View User{%endblock%}
+{%block content%}
+<div class="container" style="min-width: 1250px;">
+  {{profile_nav("roles", user_privileges)}}
+  <h3>Create Role</h3>
+
+  <p>Create a new role to act on resource "{{resource.resource_name}}"</p>
+
+  {%if resource_role_error is defined%}
+  {{display_error("Resource Role", resource_role_error)}}
+  {%else%}
+  {%if "resource:role:create-role" in (user_privileges|map(attribute="privilege_id")) %}
+  <form method="POST" action="{{url_for('oauth2.resource.create_resource_role',
+                              resource_id=resource.resource_id)}}">
+    <legend>create resource role</legend>
+
+    {{flash_me()}}
+
+    <div class="form-group">
+      <label for="role_name" class="form-label">Name</label>
+      <div class="input-group">
+        <span class="input-group-addon">
+          {{resource.resource_name|replace(" ", "_")}}::
+        </span>
+        <input type="text" id="role_name" name="role_name" required="required"
+	       class="form-control"
+	       {%if prev_role_name is defined and prev_role_name is not none%}
+	       value="{{prev_role_name}}"
+	       {%endif%} />
+      </div>
+      <span class="form-text text-muted">
+        The name of the role will have the resource's name appended.
+      </span>
+    </div>
+    <label class="form-label">Privileges</label>
+    {%for priv in user_privileges%}
+    <div class="checkbox">
+      <label for="chk-{{priv.privilege_id}}">
+	<input type="checkbox" id="chk-{{priv.privilege_id}}"
+	       name="privileges[]" value={{priv.privilege_id}} />
+	<span style="text-transform: capitalize;">
+	  {{priv.privilege_description}}
+	</span>
+      </label>
+    </div>
+    {%endfor%}
+
+    <input type="submit" class="btn btn-primary" value="Create" />
+  </form>
+  {%else%}
+  {{display_error("Privilege", {"error":"PrivilegeError", "error_description": "You do not have sufficient privileges to create a new role."})}}
+  {%endif%}
+  {%endif%}
+</div>
+{%endblock%}

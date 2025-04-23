@@ -1,0 +1,143 @@
+{% extends "index_page.html" %}
+{%block title%}Edit Case Attributes{%endblock%}
+
+{%block css%}
+<link rel="stylesheet" type="text/css"
+      href="/css/DataTables/css/jquery.dataTables.css" />
+<link rel="stylesheet" type="text/css"
+      href="{{ url_for('css', filename='jquery-ui/jquery-ui.theme.css') }}" />
+<link rel="stylesheet" type="text/css" href="/static/new/css/show_trait.css" />
+
+<style>
+  .table-fixed-head {overflow-y: auto; height: 32em;}
+  .table-fixed-head thead th {position: sticky; top: 0;}
+
+  .dataTables_scrollBody {
+    direction: ltr;
+    overflow: auto;
+  }
+</style>
+{%endblock%}
+
+{%block content%}
+<div class="container">
+  <h1>{{inbredset_group.InbredSetName}}: Edit Case-Attributes</h1>
+
+  {{flash_me()}}
+
+  <h3>Instructions</h3>
+  <ul>
+    <li>
+      The table is scrollable. Scroll to find the strain(s) you want to edit.
+    </li>
+    <li>Change value(s) to edit them in the database.</li>
+    <li>Delete value(s) to delete them from the database.</li>
+    <li>Click "Submit" to submit all the changes you have made</li>
+    <li>
+      Click "Reset" to undo <strong>ALL</strong> the changes you have made and
+      start over.
+    </li>
+  </ul>
+
+  <a href="{{url_for('list_case_attribute_diffs', inbredset_id=inbredset_id)}}"
+     title="List out diffs awaiting review"
+     class="btn btn-info">View Diffs</a>
+
+  <form method="POST" action="{{url_for('edit_case_attributes', inbredset_id=inbredset_id)}}">
+    <div class="form-group" style="text-align: center; padding: 1em 0 0 0;">
+      <input type="submit" value="Submit" class="btn btn-primary" />
+      <input type="reset" value="Reset" class="btn btn-warning" />
+    </div>
+
+
+    <div id="attr-edit-container" style="width: {{ case_attribute_names|length * 150 }}px;">
+        <table class="table-hover table-striped cell-border" id='attr-edit-table' style="float: left;">
+            <tbody>
+             <td colspan="100%" align="center"><br><b><font size="15">Loading...</font></b><br></td>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="form-group" style="text-align: center; padding: 1em 0 0 0;">
+      <input type="submit" value="Submit" class="btn btn-primary" />
+      <input type="reset" value="Reset" class="btn btn-warning" />
+    </div>
+  </form>
+</div>
+{%endblock%}
+
+{%block js%}
+<script type='text/javascript'>
+    var strainList = {{ strains|safe }};
+    var caseAttributeNames = {{ case_attribute_names|safe }};
+    var caseAttributeValues = {{ case_attribute_values|safe }};
+</script>
+<script language="javascript"
+    type="text/javascript"
+    src="{{ url_for('js', filename='DataTables/js/jquery.dataTables.min.js') }}"></script>
+<script language="javascript"
+    type="text/javascript"
+    src="{{ url_for('js', filename='DataTablesExtensions/scroller/js/dataTables.scroller.min.js') }}"></script>
+<script language="javascript" type="text/javascript" src="/static/new/javascript/table_functions.js"></script>
+<script language="javascript" type="text/javascript" src="/static/new/javascript/create_datatable.js"></script>
+<script  type="text/javascript">
+
+    createTableJson = function(caseAttributeNames, caseAttributeValues) {
+        tableJson = []
+        for (const [key, value] of Object.entries(caseAttributeValues)) {
+            let row_dict = {};
+            row_dict['sample_name'] = key
+            for (let i = 0; i < caseAttributeNames.length; i++) {
+                attr = caseAttributeNames[i]['Name']
+                row_dict[attr] = value['case-attributes'][attr]
+                attr_list = [];
+                for (var attr in value['case-attributes']){
+                    attr_list.push([attr, value['case-attributes'][attr]])
+                }
+                row_dict['caseAttributes'] = attr_list
+            }
+            tableJson.push(row_dict);
+        }
+        return tableJson
+    }
+
+    tableJson = createTableJson(caseAttributeNames, caseAttributeValues);
+
+    let columnDefs = [
+      {
+        'title': "Sample",
+        'type': "natural",
+        'data': 'sample_name',
+        'width': "60px"
+      }
+    ];
+
+    //for (let i = 0; i < caseAttributeNames.length; i++) {
+    for (let i = 0; i < tableJson[0].caseAttributes.length - 1; i++) {
+        columnDefs.push({
+            'title': tableJson[0].caseAttributes[i][0],
+            'type': "natural",
+            'data': null,
+            'width': "100px",
+            'render': function(data, type, row, meta) {
+                return '<input type="text" value="' + data.caseAttributes[meta.col - 1][1] + '" name="new:' + data.sample_name + ':' + data.caseAttributes[meta.col - 1][0] + '" class="form-control" />'
+            }
+        })
+    }
+
+    tableSettings = {
+        "columns": columnDefs,
+        "sDom": "iti",
+        "destroy": true,
+        "data": tableJson,
+        "order": [[0, "asc" ]],
+        "autoWidth": true,
+        "scrollY": "1000px",
+        "scroller": true,
+        "scrollCollapse":true
+    }
+
+    $('#attr-edit-table').DataTable(tableSettings);
+</script>
+
+{%endblock%}

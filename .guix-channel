@@ -1,0 +1,11 @@
+;; This file lets us present this repo as a Guix channel.
+
+(channel
+  (version 0)
+  (directory ".guix/modules")
+  (url "https://github.com/genenetwork/genenetwork2.git") ;the primary URL
+  (dependencies
+   (channel
+    (name guix-bioinformatics)
+    (url "https://git.genenetwork.org/guix-bioinformatics/guix-bioinformatics")
+    (branch "master"))))

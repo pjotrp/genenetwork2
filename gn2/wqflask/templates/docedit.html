@@ -1,0 +1,31 @@
+{% extends "index_page.html" %}
+
+{% block title %}Edit: {{title}}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h3>Edit: {{title}}</h3>
+    <form id="update_text" action="/update_text" method="post">
+        <input type="hidden" name="entry_type" value="{{ entry }}">
+        <input type="hidden" name="title" value="{{ title }}">
+        {% if editable is defined %}
+        <input type="hidden" name="edit" value="{{ editable }}">
+        {% endif %}
+        <button class="submit_changes" style="margin-bottom: 20px;">Submit Changes</button>
+        <textarea name="ckcontent" id="ckcontent">
+			{{content|safe}}
+        </textarea>
+        <button class="submit_changes" style="margin-top: 20px;">Submit Changes</button>
+        <script language="javascript" type="text/javascript" src="{{ url_for('js', filename='ckeditor/ckeditor.js') }}"></script>
+        <script type="text/javascript">
+            CKEDITOR.replace('ckcontent',	{
+                height: '650px',
+            });
+
+            $('.submit_changes').click(function() {
+                $('#update_text').submit();
+            })
+        </script>
+    </form>
+</div>
+{% endblock %}

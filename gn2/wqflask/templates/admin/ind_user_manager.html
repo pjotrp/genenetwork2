@@ -1,0 +1,111 @@
+{% extends "index_page.html" %}
+{% block title %}User Manager{% endblock %}
+{% block content %}
+<!-- Start of body -->
+
+    <div class="container">
+        <div class="page-header">
+            <h1 title="{{ user.id }}">{{ user.email_address }}</h1>
+
+            <span class="badge">{{ numify(user.login_count, "login", "logins").capitalize() }}</span>
+
+            {% if user.active %}
+            <span class="label label-success">Active</span>
+            {% else %}
+            <span class="label label-warning">Inactive</span>
+            {% endif %}
+        </div>
+
+        {{ flash_me() }}
+
+        <table class="table table-hover">
+<!--        <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                </tr>
+            </thead>-->
+
+            <tr>
+                <td>Name</td>
+                <td>{{ user.full_name }}</td>
+            </tr>
+
+            <tr>
+                <td>Organization</td>
+                <td>{{ user.organization }}</td>
+            </tr>
+
+
+            <tr>
+                <td>Confirmed</td>
+
+                {% if user.confirmed_at %}
+                <td>{{ timeago(user.confirmed_at + "Z") }}</td>
+                {% else %}
+                <td><span class="label label-warning">Unconfirmed</span></td>
+                {% endif %}
+            </tr>
+
+            <tr>
+                <td>Superuser</td>
+
+                {% if user.superuser %}
+                <td>Made a superuser {{ timeago(user.superuser_info['timestamp'] + "Z") }} by
+                {{ user.crowner.name_and_org }}.
+                </td>
+                {% else %}
+                <td>
+                    <span>
+                        <a class="btn btn-danger btn-small" href={{"/manage/make_superuser?user_id={}".format(user.id)}}>
+                            Make Superuser
+                        </a>
+                    </span>
+                </td>
+                {% endif %}
+            </tr>
+
+
+            <tr>
+                <td>Most recent login</td>
+                {% if user.most_recent_login %}
+                <td>{{ timeago(user.most_recent_login.timestamp.isoformat() + "Z") }} from {{ user.most_recent_login.ip_address }}</td>
+                {% else %}
+                <td><span class="label label-warning">Never</span></td>
+                {% endif %}
+            </tr>
+
+<!--            <tr>
+                <td>Last login</td>
+                <td>{{ user.last_login_at }} from {{ user.last_login_ip }}</td>
+            </tr>
+-->
+    <!--        <tr>
+                <td>Number of logins</td>
+                <td>{{ user.login_count }}</td>
+            </tr>-->
+            <tr>
+                <td colspan="2">
+                    <a class="btn btn-danger btn-small" href={{"/manage/assume_identity?user_id={}".format(user.id)}}>
+                        Become this user for debugging
+                    </a>
+                </td>
+            </tr>
+
+        </table>
+
+
+    </div>
+
+<!-- End of body -->
+
+{% endblock %}
+
+{% block js %}
+
+    <script language="javascript" type="text/javascript" src="{{ url_for('js', filename='js_alt/timeago.min.js') }}"></script>
+    <script>
+        $('body').timeago();
+    </script>
+
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "index_page.html" %}
+{% block title %}GeneWiki Entry for {{ symbol }}{% endblock %}
+{% block content %}
+    {{ flash_me() }}
+    <div class = "container">
+        <h1 class = "page-header">GeneWiki Entries</h1>
+        <p>
+            GeneWiki enables you to enrich the annotation of genes and transcripts. Please submit or edit a GeneWiki note (500 characters max) related to a gene, its transcripts, or proteins. When possible include PubMed identifiers or web resource links (URL addresses). Please ensure that the additions will have widespread use. For additional information, check the GeneWiki <a href="https://gn1.genenetwork.org/GeneWikihelp.html" target="_blank">help document</a>.
+        </p>
+        <h3>
+            GeneWiki For {{ symbol }}:
+            {% if is_logged_in and wiki %}
+                <a href="{{ url_for('edit_wiki', symbol=symbol) }}"
+                   class="btn btn-primary">New GeneWiki Entry</a>
+            {% endif %}
+        </h3>
+        <h5>
+            <strong>GeneNetwork:</strong>
+        </h5>
+        {% if wiki %}
+            <ol class="list-group">
+                {% for entry in wiki %}
+                    <li class="list-group-item">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                {{ loop.index }}. {{ entry.get("comment") }}
+                                {% if entry.get("web_url") %}
+                                    <sup> <small> <a href = "{{ entry.web_url }}" target = "_blank"> <span class = "glyphicon glyphicon-globe" aria-hidden = "true"></span>web</a></small></sup>
+                                {% endif %}
+                            </div>
+                            <div class="col-sm-2">
+                                {% if is_logged_in %}
+                                    <a href="{{ url_for('edit_wiki', comment_id=entry['id']) }}">
+                                        <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+                                    </a>
+                                {% else %}
+                                    <a data-toggle="collapse"
+                                       data-target="#collapseLogin{{ loop.index }}"
+                                       aria-expanded="false"
+                                       aria-controls="collapseLogin{{ loop.index }}">
+                                        <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+                                    </a>
+                                    <div class="collapse" id="collapseLogin{{ loop.index }}">
+                                        <div class="well">Please login to be able to edit this</div>
+                                    </div>
+                                {% endif %}
+                                <sup><small>[<a href="/genewiki/{{ entry.id }}/history" target="_blank">history</a>]</small></sup>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ol>
+        {% else %}
+            <p class = "well">
+                <u> There are no GeneNetwork entries for <b> {{ symbol }}.</b></u>
+                <br />
+                Consider adding new gene entries:
+                <br />
+                {% if is_logged_in %}
+                    <a href="{{ url_for('edit_wiki', symbol=symbol) }}"
+                       class="btn btn-primary">New GeneWiki Entry</a>
+                {% endif %}
+            </p>
+        {% endif %}
+        <h5>
+            <strong>GeneRIF from NCBI:</strong>
+        </h5>
+        {% if rif %}
+            <ol class="list-group">
+                {% for entry in rif %}
+                    <li class="list-group-item">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                {{ loop.index }}. {{ entry.get("comment") }}
+                                (<a href="http://www.ncbi.nlm.nih.gov/gene?cmd=Retrieve&dopt=Graphics&list_uids={{ entry.gene_id }}"
+   target="_blank">{{ entry.species }}</a>)
+                                (<a href="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids={{ entry.pubmed_id }}&dopt=Abstract"
+   target="_blank">PubMed</a>)
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ol>
+        {% else %}
+            <p class = "well">
+                <u> There are no NCBI RIF entries for this for<b> {{ symbol }}.</b></u>
+            </p>
+        {% endif %}
+    </div>
+{% endblock %}
